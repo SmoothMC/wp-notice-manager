@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4 — 2026-09-22
+
+- Popup und Ticker unabhängig deaktivierbar, einschließlich des jeweiligen Posttyps; Inhalte bleiben erhalten.
+- Ticker-Steuerung (Pause / Weiter) optional ausblendbar.
+- Nahtloses Laufband auch mit einer einzelnen kurzen Meldung.
+- Optionaler sichtbarer Titel pro Tickerbeitrag und Punkt-Trenner zwischen Titel, Meldung und Beiträgen.
+
 ## 1.0.3 — 2026-09-22
 
 - WordPress-Updates über GitHub-Releases und update.json.

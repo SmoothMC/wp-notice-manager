@@ -55,9 +55,41 @@ const root = path.resolve(__dirname, '..');
   data.popup = null; data.settings.ticker_mode = 'marquee'; await load();
   assert.equal(await page.locator('[data-presentation="marquee"]').count(), 1);
   assert.ok(await page.evaluate(() => document.querySelector('.zzznm-ticker-track').getAnimations().length));
+  data.tickers = [{ id: 2, title: 'NEU', html: '<p>Ab 01.10.2026: Neue Sprechstunde. <a href="/info">Weitere Informationen</a></p>' }];
+  await load();
+  const loop = await page.evaluate(() => {
+    const track = document.querySelector('.zzznm-ticker-track');
+    const group = track.firstElementChild;
+    const animation = track.getAnimations()[0];
+    const distance = group.getBoundingClientRect().width;
+    animation.pause(); animation.currentTime = animation.effect.getTiming().duration - 1;
+    const viewport = track.parentElement.getBoundingClientRect();
+    return { copies: track.children.length, distance, width: viewport.width,
+      right: track.getBoundingClientRect().right, viewportRight: viewport.right,
+      title: group.querySelector('.zzznm-ticker-title').textContent,
+      separators: group.querySelectorAll('.zzznm-ticker-separator').length,
+      accessibleLinks: track.querySelectorAll('a:not([tabindex="-1"])').length,
+      start: animation.effect.getKeyframes()[0].transform };
+  });
+  assert.ok(loop.copies >= Math.ceil(loop.width / loop.distance) + 1);
+  assert.ok(loop.right >= loop.viewportRight, 'No gap at end of loop');
+  assert.equal(loop.title, 'NEU'); assert.equal(loop.separators, 2);
+  assert.equal(loop.accessibleLinks, 1, 'Cloned links excluded from keyboard order');
+  assert.equal(loop.start, 'translateX(0px)');
+  await page.setViewportSize({ width: 1920, height: 800 });
+  await page.waitForTimeout(100);
+  assert.ok(await page.evaluate(() => document.querySelector('.zzznm-ticker-track').scrollWidth > document.querySelector('.zzznm-ticker-viewport').clientWidth + document.querySelector('.zzznm-ticker-group').getBoundingClientRect().width));
+  await page.screenshot({ path: '/tmp/zzznm-ticker-1.0.4.png' });
+  data = fresh(); data.popup = null; data.settings.ticker_mode = 'marquee';
   await load({ reduced: true });
   assert.equal(await page.locator('[data-presentation="rotate"]').count(), 1);
   assert.equal(await page.locator('button[aria-pressed]').textContent(), 'Fortsetzen');
+  data.settings.ticker_controls = 0; await load({ reduced: true });
+  assert.equal(await page.locator('.zzznm-ticker-controls').isVisible(), false);
+  assert.equal(await page.locator('.zzznm-ticker-item:not([hidden])').count(), 2);
+  await load();
+  assert.equal(await page.locator('.zzznm-ticker-controls').isVisible(), false);
+  assert.ok(await page.evaluate(() => document.querySelector('.zzznm-ticker-track').getAnimations().length));
   data.tickers = []; await load();
   assert.equal(await page.locator('[data-zzznm-ticker]').isVisible(), false);
   data = fresh(); data.popup.key = 'expires'; data.popup.until = Math.floor(Date.now() / 1000) + 2;

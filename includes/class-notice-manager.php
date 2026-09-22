@@ -12,6 +12,7 @@ final class ZZZNM_Manager {
 
     public function register_types() {
         foreach ([self::POPUP => ['Popups', 'Popup'], self::TICKER => ['Ticker', 'Tickertext']] as $type => $names) {
+            if (!$this->is_enabled($type)) { continue; }
             register_post_type($type, [
                 'labels' => ['name' => $names[0], 'singular_name' => $names[1],
                     'add_new' => 'Neu hinzufügen', 'add_new_item' => $names[1] . ' hinzufügen',
@@ -32,10 +33,15 @@ final class ZZZNM_Manager {
 
     public function settings() {
         return wp_parse_args((array) get_option(self::OPTION, []), [
-            'enabled' => 1, 'renderer' => 'standalone', 'template_id' => 0,
+            'enabled' => 1, 'ticker_enabled' => 1, 'ticker_controls' => 1, 'renderer' => 'standalone', 'template_id' => 0,
             'delay' => 400, 'complianz_delay' => 300, 'dismiss' => 'content', 'ticker_mode' => 'rotate',
             'interval' => 6, 'speed' => 45,
         ]);
+    }
+
+    public function is_enabled($type) {
+        $settings = $this->settings();
+        return !empty($settings[$type === self::POPUP ? 'enabled' : 'ticker_enabled']);
     }
 
     public static function parse_date($value) {
@@ -75,6 +81,7 @@ final class ZZZNM_Manager {
     }
 
     public function active($type, $now = null) {
+        if (!$this->is_enabled($type)) { return []; }
         $now = $now ?? time();
         $active = [];
         foreach (get_posts(['post_type' => $type, 'post_status' => 'publish', 'numberposts' => -1,

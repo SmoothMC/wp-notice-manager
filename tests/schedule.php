@@ -58,6 +58,22 @@ check($admin->sanitize_settings(['complianz_delay' => 0])['complianz_delay'] ===
 check($admin->sanitize_settings(['complianz_delay' => 1250])['complianz_delay'] === 1250, 'Custom release delay preserved');
 check($admin->sanitize_settings(['complianz_delay' => -100])['complianz_delay'] === 0, 'Negative delay clamped');
 check($admin->sanitize_settings(['complianz_delay' => 999999])['complianz_delay'] === 60000, 'Release delay bounded');
+function register_post_type($type, $args) { $GLOBALS['registered'][] = $type; }
+$options[ZZZNM_Manager::OPTION] = ['enabled' => 0, 'ticker_enabled' => 0];
+$registered = []; $manager->register_types();
+check($registered === [], 'Disabled modules do not register post types');
+check($manager->active(ZZZNM_Manager::TICKER) === [], 'Disabled ticker returns no posts');
+$frontend = new ZZZNM_Frontend($manager);
+check($frontend->ticker([]) === '', 'Disabled ticker shortcode is empty');
+check($frontend->popup_shortcode('notice') === '', 'Disabled popup shortcode is empty');
+$options[ZZZNM_Manager::OPTION] = ['enabled' => 0, 'ticker_enabled' => 1];
+$registered = []; $manager->register_types();
+check($registered === [ZZZNM_Manager::TICKER], 'Ticker independent of popup');
+$options[ZZZNM_Manager::OPTION] = ['enabled' => 1, 'ticker_enabled' => 0];
+$registered = []; $manager->register_types();
+check($registered === [ZZZNM_Manager::POPUP], 'Popup independent of ticker');
+$options[ZZZNM_Manager::OPTION] = [];
+check($manager->is_enabled(ZZZNM_Manager::TICKER), 'Existing installs retain ticker');
 $parse = [ZZZNM_Manager::class, 'parse_date'];
 check($parse('') === 0, 'Empty dates rejected');
 check($parse('2026-02-30T12:00') === 0, 'Invalid calendar date rejected');

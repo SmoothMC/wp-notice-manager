@@ -42,7 +42,7 @@
 .zzznm-ticker-item { overflow-wrap: anywhere; }
 .zzznm-ticker-item p { margin: 0; }
 .zzznm-ticker-item a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
-.zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-track { display: flex; width: max-content; gap: 64px; white-space: nowrap; }
+.zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-track { display: flex; width: max-content; white-space: nowrap; }
 .zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-item { flex: 0 0 auto; }
 .zzznm-ticker-controls { display: flex; flex: 0 0 auto; gap: 6px; }
 .zzznm-ticker-controls button {
@@ -55,3 +55,9 @@
   .zzznm-text { column-count: 1; }
   .zzznm-ticker { gap: 8px; padding: 8px 12px; }
 }
+
+.zzznm-ticker-group { display: flex; align-items: center; flex: 0 0 auto; width: max-content; }
+.zzznm-ticker-separator { display: inline-block; flex: 0 0 auto; margin-inline: 2rem; }
+.zzznm-ticker-title { white-space: nowrap; }
+.zzznm-ticker-body, .zzznm-ticker-body p { display: inline; }
+.zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-item { display: flex; align-items: center; }

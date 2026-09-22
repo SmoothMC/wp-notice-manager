@@ -218,7 +218,15 @@
     const track = element('div', 'zzznm-ticker-track');
     const nodes = items.map(item => {
       const node = element('div', 'zzznm-ticker-item');
-      node.innerHTML = item.html;
+      if (item.title) {
+        node.append(element('span', 'zzznm-ticker-title', item.title));
+        const separator = element('span', 'zzznm-ticker-separator', '•');
+        separator.setAttribute('aria-hidden', 'true');
+        node.append(separator);
+      }
+      const body = element('span', 'zzznm-ticker-body');
+      body.innerHTML = item.html;
+      node.append(body);
       track.append(node);
       return node;
     });
@@ -245,18 +253,40 @@
     root.dataset.presentation = marquee ? 'marquee' : 'rotate';
     let resize;
     if (marquee) {
+      const group = element('div', 'zzznm-ticker-group');
+      nodes.forEach(node => {
+        group.append(node);
+        const separator = element('span', 'zzznm-ticker-separator', '•');
+        separator.setAttribute('aria-hidden', 'true');
+        group.append(separator);
+      });
+      track.replaceChildren(group);
+      let lastWidth = 0, lastViewport = 0;
       const run = () => {
+        const distance = group.getBoundingClientRect().width;
+        const width = viewport.clientWidth;
+        if (!distance || !width || (distance === lastWidth && width === lastViewport)) return;
+        lastWidth = distance; lastViewport = width;
         animation?.cancel();
-        const distance = track.scrollWidth + viewport.clientWidth;
+        while (track.children.length > 1) track.lastElementChild.remove();
+        // Enough identical cycles cover even a wide viewport with a single short message.
+        const copies = Math.ceil(width / distance) + 1;
+        for (let i = 0; i < copies; i++) {
+          const copy = group.cloneNode(true);
+          copy.setAttribute('aria-hidden', 'true');
+          copy.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+          copy.querySelectorAll('a, button, input, select, textarea, [tabindex]').forEach(node => node.setAttribute('tabindex', '-1'));
+          track.append(copy);
+        }
         animation = track.animate([
-          { transform: `translateX(${viewport.clientWidth}px)` },
-          { transform: `translateX(-${track.scrollWidth}px)` }
+          { transform: 'translateX(0)' },
+          { transform: `translateX(-${distance}px)` }
         ], { duration: distance / options.speed * 1000, iterations: Infinity, easing: 'linear' });
         updatePause();
       };
       resize = new ResizeObserver(run);
       resize.observe(viewport);
-      resize.observe(track);
+      resize.observe(group);
       run();
     } else {
       nodes.forEach((node, i) => { node.hidden = i !== 0; });
@@ -265,6 +295,11 @@
         next.addEventListener('click', rotate);
         interval = setInterval(() => { if (!isPaused()) rotate(); }, options.interval * 1000);
       } else controls.hidden = true;
+    }
+    if (!options.controls) {
+      controls.hidden = true;
+      // Keep every message readable when reduced motion prevents automatic rotation.
+      if (reduced.matches) nodes.forEach(node => { node.hidden = false; });
     }
     pause.addEventListener('click', () => { paused = !paused; updatePause(); });
     const enter = () => { hover = true; updatePause(); };
@@ -290,6 +325,7 @@
     }
     document.querySelectorAll('[data-zzznm-ticker]').forEach(root => {
       const options = {
+        controls: state.settings.ticker_controls !== 0 && state.settings.ticker_controls !== '0',
         mode: root.dataset.mode || state.settings.ticker_mode,
         interval: Number(root.dataset.interval || state.settings.interval),
         speed: Number(root.dataset.speed || state.settings.speed)

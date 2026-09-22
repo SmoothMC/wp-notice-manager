@@ -51,7 +51,7 @@ final class ZZZNM_Frontend {
         $popups = $settings['enabled'] ? $this->manager->active(ZZZNM_Manager::POPUP, $now) : [];
         $tickers = [];
         foreach ($this->manager->active(ZZZNM_Manager::TICKER, $now) as $post) {
-            $tickers[] = ['id' => $post->ID, 'html' => $this->manager->body($post)];
+            $tickers[] = ['id' => $post->ID, 'title' => (string) get_post_meta($post->ID, '_zzznm_ticker_title', true), 'html' => $this->manager->body($post)];
         }
         $next = $now + 60;
         foreach (get_posts(['post_type' => [ZZZNM_Manager::POPUP, ZZZNM_Manager::TICKER],
@@ -66,12 +66,14 @@ final class ZZZNM_Frontend {
     }
 
     public function popup_shortcode($part) {
+        if (!$this->manager->is_enabled(ZZZNM_Manager::POPUP)) { return ''; }
         // Populated from the uncached endpoint, including in cached Elementor markup.
         $tag = $part === 'heading' ? 'span' : 'div';
         return '<' . $tag . ' data-zzznm-popup="' . esc_attr($part) . '"></' . $tag . '>';
     }
 
     public function ticker($attributes) {
+        if (!$this->manager->is_enabled(ZZZNM_Manager::TICKER)) { return ''; }
         $attributes = shortcode_atts(['mode' => '', 'interval' => '', 'speed' => ''], $attributes, 'notice_ticker');
         $mode = in_array($attributes['mode'], ['rotate', 'marquee'], true) ? $attributes['mode'] : '';
         $interval = $attributes['interval'] === '' ? '' : max(2, min(60, (int) $attributes['interval']));

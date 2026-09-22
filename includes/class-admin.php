@@ -48,6 +48,8 @@ final class ZZZNM_Admin {
         if ($id && (get_post_type($id) !== 'elementor_library' || get_post_status($id) !== 'publish'
             || get_post_meta($id, '_elementor_template_type', true) !== 'popup')) { $id = 0; }
         return ['enabled' => empty($input['enabled']) ? 0 : 1,
+            'ticker_enabled' => empty($input['ticker_enabled']) ? 0 : 1,
+            'ticker_controls' => empty($input['ticker_controls']) ? 0 : 1,
             'renderer' => $enum('renderer', ['standalone', 'elementor'], 'standalone'),
             'template_id' => $id, 'delay' => min(60000, absint($input['delay'] ?? 400)),
             'complianz_delay' => max(0, min(60000, (int) ($input['complianz_delay'] ?? 300))),
@@ -75,16 +77,17 @@ final class ZZZNM_Admin {
         }
         echo '<div class="wrap"><h1>Notice Manager <small>by ZZZOOO</small></h1>';
         settings_errors();
-        echo '<p>Verwalte Inhalte unter <a href="' . esc_url(admin_url('edit.php?post_type=zzznm_popup')) . '">Popups</a> und <a href="' . esc_url(admin_url('edit.php?post_type=zzznm_ticker')) . '">Ticker</a>. Die Darstellung wird hier zentral festgelegt.</p><form action="options.php" method="post">';
+        echo '<p>Aktiviere die benötigten Bereiche. Deaktivierte Bereiche werden auf der Website und in der Verwaltung ausgeblendet. Gespeicherte Beiträge bleiben erhalten.</p><form action="options.php" method="post">';
         settings_fields('zzznm');
-        echo '<h2>Popups</h2><table class="form-table"><tr><th>Automatische Ausgabe</th><td><label><input type="checkbox" name="zzznm_settings[enabled]" value="1" ' . checked($settings['enabled'], 1, false) . '> Popups auf der Website anzeigen</label></td></tr>';
+        echo '<h2>Popups</h2><table class="form-table"><tr><th>Popup-Funktion</th><td><label><input type="checkbox" name="zzznm_settings[enabled]" value="1" ' . checked($settings['enabled'], 1, false) . '> Popups aktivieren (inklusive Posttyp)</label></td></tr>';
         $this->select('renderer', 'Darstellung', ['standalone' => 'Standalone (ohne Page Builder)', 'elementor' => 'Elementor Pro'], $settings);
         $this->select('template_id', 'Standard-Elementor-Template', $templates, $settings);
         $this->select('dismiss', 'Nach dem Schließen', ['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'], $settings);
         echo '<tr><th><label for="zzznm-delay">Verzögerung (Millisekunden)</label></th><td><input id="zzznm-delay" name="zzznm_settings[delay]" type="number" min="0" max="60000" step="100" value="' . esc_attr($settings['delay']) . '"></td></tr>';
         echo '<tr><th><label for="zzznm-complianz-delay">Verzögerung nach Complianz-Freigabe (ms)</label></th><td><input id="zzznm-complianz-delay" name="zzznm_settings[complianz_delay]" type="number" min="0" max="60000" step="1" value="' . esc_attr($settings['complianz_delay']) . '" aria-describedby="zzznm-complianz-delay-help"><p class="description" id="zzznm-complianz-delay-help">Wartezeit nach dem Schließen des Cookie-Banners. Standard: 300 ms. Die allgemeine Popup-Verzögerung kommt zusätzlich hinzu. 0 = keine zusätzliche Wartezeit.</p></td></tr></table>';
         echo '<p>Ohne verfügbares Elementor Pro oder gültiges Template wird das Standalone-Popup verwendet. Im Elementor-Template die Shortcodes unten einsetzen. Automatische Elementor-Trigger für dieses Template deaktivieren: Die Zeitplanung übernimmt der Notice Manager.</p>';
-        echo '<h2>Ticker</h2><table class="form-table">';
+        echo '<h2>Ticker</h2><table class="form-table"><tr><th>Ticker-Funktion</th><td><label><input type="checkbox" name="zzznm_settings[ticker_enabled]" value="1" ' . checked($settings['ticker_enabled'], 1, false) . '> Ticker aktivieren (inklusive Posttyp)</label></td></tr>';
+        echo '<tr><th>Ticker-Steuerung</th><td><label><input type="checkbox" name="zzznm_settings[ticker_controls]" value="1" ' . checked($settings['ticker_controls'], 1, false) . '> Ticker-Steuerung anzeigen (Pause / Weiter)</label></td></tr>';
         $this->select('ticker_mode', 'Standard-Darstellung', ['rotate' => 'Wechselnde Meldungen', 'marquee' => 'Durchlaufendes Laufband'], $settings);
         foreach (['interval' => ['Wechselintervall (Sekunden)', 2, 60], 'speed' => ['Laufband-Geschwindigkeit (Pixel pro Sekunde)', 10, 200]] as $key => $field) {
             echo '<tr><th><label for="zzznm-' . esc_attr($key) . '">' . esc_html($field[0]) . '</label></th><td><input id="zzznm-' . esc_attr($key) . '" name="zzznm_settings[' . esc_attr($key) . ']" type="number" min="' . (int) $field[1] . '" max="' . (int) $field[2] . '" value="' . esc_attr($settings[$key]) . '"></td></tr>';
@@ -125,6 +128,7 @@ final class ZZZNM_Admin {
             for ($i = 1; $i <= 6; $i++) { echo '<option ' . selected($columns, $i, false) . '>' . $i . '</option>'; }
             echo '</select></p><p>Der Beitragstitel ist die Popup-Überschrift. Die Darstellung folgt den zentralen Einstellungen.</p>';
         } else {
+            echo '<p><label for="zzznm-ticker-title">Zusätzlicher sichtbarer Titel (optional)</label><br><input class="regular-text" id="zzznm-ticker-title" name="zzznm_ticker_title" type="text" value="' . esc_attr(get_post_meta($post->ID, '_zzznm_ticker_title', true)) . '" placeholder="NEU"><br>Titel und Meldung werden durch • getrennt, ebenso die Beiträge im Laufband.</p>';
             echo '<p><label for="zzznm-order">Reihenfolge (kleinere Zahlen zuerst)</label> <input id="zzznm-order" type="number" name="zzznm_order" value="' . (int) $post->menu_order . '"></p><p>Der Editor enthält die sichtbare Meldung, der Titel dient der internen Verwaltung. Einbindung: <code>[notice_ticker]</code></p>';
         }
         echo '<p>Mit „Veröffentlichen“ wird die Anzeige für den oben eingetragenen Zeitraum freigegeben. Unvollständige Einträge können als Entwurf gespeichert werden.</p>';
@@ -220,6 +224,9 @@ final class ZZZNM_Admin {
             $raw = $this->input('zzznm_' . $key);
             update_post_meta($id, '_zzznm_' . $key, ZZZNM_Manager::parse_date($raw));
             update_post_meta($id, '_zzznm_raw_' . $key, $raw !== '' && !ZZZNM_Manager::parse_date($raw) ? $raw : '');
+        }
+        if ($post->post_type === ZZZNM_Manager::TICKER && isset($_POST['zzznm_ticker_title'])) {
+            update_post_meta($id, '_zzznm_ticker_title', $this->input('zzznm_ticker_title'));
         }
         update_post_meta($id, '_zzznm_columns', max(1, min(6, (int) $this->input('zzznm_columns'))));
     }

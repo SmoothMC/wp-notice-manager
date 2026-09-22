@@ -1,4 +1,4 @@
-# WP Notice Manager by ZZZOOO · 1.0.3
+# WP Notice Manager by ZZZOOO · 1.0.4
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -13,13 +13,13 @@ GitHub-Projekt: [SmoothMC/wp-notice-manager](https://github.com/SmoothMC/wp-noti
 
 Voraussetzungen: WordPress 6.0+, PHP 7.4+, aktuelle Browser mit nativem HTML-Dialog und Web Animations API. Standalone benötigt weder Elementor noch Divi. Elementor-Ausgabe benötigt Elementor Pro mit Popup-Modul.
 
-## Installation und Updates ab 1.0.3
+## Installation und Updates ab 1.0.4
 
 Das installierbare Paket heißt `wp-notice-manager-X.Y.Z.zip` und liegt unter [GitHub Releases](https://github.com/SmoothMC/wp-notice-manager/releases/latest). Bitte dieses ZIP verwenden, nicht GitHubs automatisch erzeugtes „Source code“-Archiv.
 
-Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.0.3 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
+Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.0.4 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
 
-Ab 1.0.3 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
+Ab 1.0.4 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
 
 Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/SmoothMC/wp-notice-manager/releases/latest/download/update.json), das ZIP aus demselben versionierten GitHub-Release. Dafür werden keine GitHub-Tokens in WordPress benötigt. Erfolgreiche Prüfungen werden sechs Stunden, fehlgeschlagene fünf Minuten zwischengespeichert. Die manuelle Prüfung umgeht diesen Cache. Das Repository und die Releases müssen öffentlich erreichbar bleiben.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.0.3`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.0.4`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -117,3 +117,9 @@ Deaktivierung/Deinstallation löscht keine Beiträge oder Optionen. Es werden ke
 Auf einer WordPress-Testinstallation prüfen: Standalone und Elementor Pro mit dem tatsächlichen Theme, Divi-Header mit beiden Ticker-Modi, Cache-Plugin, mobile Ansicht, Tastaturbedienung, aufeinanderfolgende Zeiträume und Wiederanzeige nach Änderungen. Eine lokale Browserprüfung ersetzt diesen Integrationstest nicht.
 
 API-Referenzen: [WordPress wp_insert_post_data](https://developer.wordpress.org/reference/hooks/wp_insert_post_data/), [wp_after_insert_post](https://developer.wordpress.org/reference/functions/wp_after_insert_post/), [Elementor Popup Events](https://developers.elementor.com/elementor-pro-2-7-popup-events/).
+
+### Bereiche und Ticker-Titel
+
+In den Einstellungen lassen sich Popup und Ticker einzeln deaktivieren. Der jeweilige Posttyp wird dann nicht registriert; vorhandene Beiträge bleiben gespeichert. Pro Tickerbeitrag gibt es einen optionalen zusätzlichen sichtbaren Titel (z. B. „NEU“). Das Laufband trennt Titel und Meldungen mit • und läuft auch mit einer einzelnen Meldung nahtlos weiter. Bei reduzierter Bewegung bleibt die bedienbare Wechselansicht erhalten.
+
+„Ticker-Steuerung anzeigen“ blendet Pause/Weiter ein oder aus. Bei ausgeblendeter Steuerung und reduzierter Bewegung werden alle Meldungen statisch angezeigt.
