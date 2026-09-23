@@ -75,6 +75,15 @@
   }
   function content(post, part = 'notice') {
     const wrap = document.createDocumentFragment();
+    const buttonURL = safeButtonURL(post.button_url);
+    if (part === 'button_text') { wrap.append(document.createTextNode(post.button_text || '')); return wrap; }
+    if (part === 'button') {
+      if (post.button_text && buttonURL) {
+        const button = element('a', 'zzznm-button', post.button_text);
+        button.href = buttonURL; wrap.append(button);
+      }
+      return wrap;
+    }
     if (part !== 'text') wrap.append(element(part === 'heading' ? 'span' : 'h2', 'zzznm-heading', post.heading));
     if (part !== 'heading') {
       const body = element('div', 'zzznm-text praxis-popup-text-columns');
@@ -82,15 +91,35 @@
       body.innerHTML = post.html; // Sanitized with wp_kses_post by the server.
       wrap.append(body);
     }
+    if (part === 'notice') wrap.append(content(post, 'button'));
     return wrap;
+  }
+  function safeButtonURL(value) {
+    if (!value || typeof value !== 'string') return '';
+    try {
+      const url = new URL(value, location.href);
+      return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? value : '';
+    } catch (_) { return ''; }
   }
   function fillSlots() {
     document.querySelectorAll('[data-zzznm-popup]').forEach(slot => {
       const post = state?.popup;
-      const signature = post ? JSON.stringify([post.key, post.heading, post.html, post.columns]) : '';
+      const signature = post ? JSON.stringify([post.key, post.heading, post.html, post.columns, post.button_text, post.button_url]) : '';
       if (slot.dataset.zzznmSignature === signature) return;
       slot.dataset.zzznmSignature = signature;
       slot.replaceChildren(...(post && now() < post.until ? [content(post, slot.dataset.zzznmPopup)] : []));
+    });
+    const post = state?.popup;
+    const url = post && now() < post.until ? safeButtonURL(post.button_url) : '';
+    document.querySelectorAll('a[href="#notice-popup-link"], a[data-zzznm-link]').forEach(link => {
+      link.dataset.zzznmLink = '1';
+      const autoText = link.matches('.zzznm-popup-button') || link.closest('.zzznm-popup-button');
+      const visible = Boolean(url && (!autoText || post?.button_text));
+      if (link.hidden === visible) link.hidden = !visible;
+      if (visible) {
+        if (link.getAttribute('href') !== url) link.setAttribute('href', url);
+        if (autoText && link.textContent !== post.button_text) link.textContent = post.button_text;
+      } else if (link.hasAttribute('href')) link.removeAttribute('href');
     });
   }
   function remember(post) {

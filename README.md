@@ -1,4 +1,4 @@
-# WP Notice Manager by ZZZOOO · 1.0.5
+# WP Notice Manager by ZZZOOO · 1.0.6
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -13,13 +13,13 @@ GitHub-Projekt: [SmoothMC/wp-notice-manager](https://github.com/SmoothMC/wp-noti
 
 Voraussetzungen: WordPress 6.0+, PHP 7.4+, aktuelle Browser mit nativem HTML-Dialog und Web Animations API. Standalone benötigt weder Elementor noch Divi. Elementor-Ausgabe benötigt Elementor Pro mit Popup-Modul.
 
-## Installation und Updates ab 1.0.5
+## Installation und Updates ab 1.0.6
 
 Das installierbare Paket heißt `wp-notice-manager-X.Y.Z.zip` und liegt unter [GitHub Releases](https://github.com/SmoothMC/wp-notice-manager/releases/latest). Bitte dieses ZIP verwenden, nicht GitHubs automatisch erzeugtes „Source code“-Archiv.
 
-Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.0.5 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
+Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.0.6 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
 
-Ab 1.0.5 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
+Ab 1.0.6 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
 
 Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/SmoothMC/wp-notice-manager/releases/latest/download/update.json), das ZIP aus demselben versionierten GitHub-Release. Dafür werden keine GitHub-Tokens in WordPress benötigt. Erfolgreiche Prüfungen werden sechs Stunden, fehlgeschlagene fünf Minuten zwischengespeichert. Die manuelle Prüfung umgeht diesen Cache. Das Repository und die Releases müssen öffentlich erreichbar bleiben.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.0.5`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.0.6`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -129,3 +129,14 @@ In den Einstellungen lassen sich Popup und Ticker einzeln deaktivieren. Der jewe
 „Nach dem Schließen“ wird im jeweiligen Popup eingestellt. Ohne eigene Auswahl gilt „Erneut bei geändertem Inhalt oder Zeitraum“, auch bei bestehenden Popups; die frühere globale Einstellung wird nicht mehr verwendet.
 
 Für Divi ein veröffentlichtes Layout in der Divi-Bibliothek mit dem Tag **Popup** versehen. Unter Einstellungen die Darstellung **Divi-Bibliothek** und das **Standard-Divi-Template** auswählen. Inhalte über `[notice_popup_heading]`, `[notice_popup_text]` oder `[notice_popup_notice]` einbinden. Das Layout erscheint im Plugin-Dialog. Ohne verfügbaren Renderer oder passendes Layout wird die Standalone-Ausgabe verwendet. Nach Template-Änderungen den Seiten-Cache leeren.
+
+### Popup-Button
+
+Im Popup die optionalen Felder **Button-Text** und **Button-Link** ausfüllen. Standalone und `[notice_popup_notice]` enthalten den Button automatisch, wenn beide Felder ausgefüllt sind. Bei eigenen Templates:
+
+- `[notice_popup_button]` in ein Textmodul: vollständiger Button mit Text und Link.
+- `[notice_popup_button_text]`: nur die Beschriftung, für Textinhalte (nicht für URL-Felder).
+- Divi-Button- oder Bildmodul: als normale Link-URL `#notice-popup-link` eintragen, keine dynamische Quelle auswählen. Der aktive Popup-Link wird auch auf gecachten Seiten eingesetzt. Ohne gültigen Link wird dieses Element ausgeblendet.
+- Divi-Button-Modul zusätzlich unter Erweitert → CSS-ID & Klassen die CSS-Klasse `zzznm-popup-button` geben: übernimmt auch den Button-Text. Im Button-Textfeld kann ein Platzhalter wie „Weitere Informationen“ stehen. Diese Klasse nur für Buttons verwenden, nicht für Bildmodule.
+
+Bei fehlendem Button-Text oder Link bleibt der vollständige Button verborgen. HTTP(S), mailto, tel und interne Pfade sind möglich.

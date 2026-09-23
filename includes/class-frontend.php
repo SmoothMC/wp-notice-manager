@@ -14,7 +14,7 @@ final class ZZZNM_Frontend {
         add_action('wp_ajax_zzznm_state', [$this, 'state']);
         add_action('wp_ajax_nopriv_zzznm_state', [$this, 'state']);
         add_shortcode('notice_ticker', [$this, 'ticker']);
-        foreach (['heading', 'text', 'notice'] as $part) {
+        foreach (['heading', 'text', 'notice', 'button', 'button_text'] as $part) {
             foreach (['notice_popup_', 'praxis_popup_'] as $prefix) {
                 add_shortcode($prefix . $part, function () use ($part) { return $this->popup_shortcode($part); });
             }
@@ -90,7 +90,7 @@ final class ZZZNM_Frontend {
     public function popup_shortcode($part) {
         if (!$this->manager->is_enabled(ZZZNM_Manager::POPUP)) { return ''; }
         // Populated from the uncached endpoint, including in cached Elementor markup.
-        $tag = $part === 'heading' ? 'span' : 'div';
+        $tag = in_array($part, ['heading', 'button', 'button_text'], true) ? 'span' : 'div';
         return '<' . $tag . ' data-zzznm-popup="' . esc_attr($part) . '"></' . $tag . '>';
     }
 

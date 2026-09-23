@@ -28,6 +28,7 @@ function get_current_user_id() { return 1; }
 function set_transient($key, $value, $expiry) { $GLOBALS['notice'] = $value; }
 function wp_is_post_revision($id) { return false; }
 function wp_is_post_autosave($id) { return false; }
+function esc_url_raw($value, $protocols = []) { return $value; } // Domain double; WordPress owns URL sanitization.
 function wp_kses_post($value) { return $value; }
 function wpautop($value) { return '<p>' . $value . '</p>'; }
 function absint($value) { return abs((int) $value); }
@@ -160,4 +161,15 @@ $frontend->complianz_config();
 check(strpos($GLOBALS['inline'], '= true;') !== false, 'Already printed banner remains detected');
 foreach (glob(dirname(__DIR__) . '/includes/*.php') as $file) { token_get_all(file_get_contents($file), TOKEN_PARSE); }
 token_get_all(file_get_contents(dirname(__DIR__) . '/notice-manager-by-zzzooo.php'), TOKEN_PARSE);
+$meta[$post->ID]['_zzznm_dismiss'] = 'content';
+$key = $manager->popup_data($post)['key'];
+$meta[$post->ID]['_zzznm_button_text'] = 'Details';
+$meta[$post->ID]['_zzznm_button_url'] = 'https://example.org/info';
+$button_data = $manager->popup_data($post);
+check($button_data['button_text'] === 'Details' && $button_data['button_url'] === 'https://example.org/info', 'Button data is per popup');
+check($button_data['key'] !== $key, 'Button changes reset content dismissal');
+$meta[$post->ID]['_zzznm_dismiss'] = 'forever';
+$key = $manager->popup_data($post)['key'];
+$meta[$post->ID]['_zzznm_button_url'] = 'https://example.org/changed';
+check($manager->popup_data($post)['key'] === $key, 'Button changes preserve forever dismissal');
 echo "PASS: {$checks} checks; dates, DST, required fields, overlaps, boundaries, drafts, concurrent writes, active selection, dismissal keys; all PHP files parse.\n";

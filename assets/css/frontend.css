@@ -65,3 +65,7 @@
 #zzznm-divi-template[hidden] { display: none !important; }
 .zzznm-dialog-divi { width: min(960px, calc(100vw - 32px)); padding: 40px 0 0; }
 .zzznm-dialog-divi .zzznm-close { z-index: 10; }
+
+.zzznm-button { display: inline-block; margin-top: 1rem; padding: .65em 1.2em; border-radius: 4px; background: var(--zzznm-button-background, #193f33); color: var(--zzznm-button-color, #fff); text-decoration: none; }
+.zzznm-button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+a[data-zzznm-link][hidden] { display: none !important; }

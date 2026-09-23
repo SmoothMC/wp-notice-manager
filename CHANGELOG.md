@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6 — 2026-09-23
+
+- Optionaler Button-Text und Button-Link pro Popup.
+- Shortcodes für vollständigen Button und Button-Text.
+- Dynamischer Link-Platzhalter für Divi-Button- und Bildmodule.
+- Geänderte Button-Inhalte berücksichtigen die Popup-Schließregel.
+
 ## 1.0.5 — 2026-09-23
 
 - Schließverhalten pro Popup statt global; Standard: erneut bei geändertem Inhalt oder Zeitraum.

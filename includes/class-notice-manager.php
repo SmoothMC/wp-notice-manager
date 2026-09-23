@@ -103,13 +103,16 @@ final class ZZZNM_Manager {
 
     public function popup_data($post) {
         $dismiss = $this->dismiss_mode($post->ID);
+        $button_text = sanitize_text_field(get_post_meta($post->ID, '_zzznm_button_text', true));
+        $button_url = esc_url_raw(get_post_meta($post->ID, '_zzznm_button_url', true), ['http', 'https', 'mailto', 'tel']);
         $range = $this->schedule($post->ID);
         $key = (string) $post->ID;
         if (in_array($dismiss, ['content', 'date'], true)) {
             $key .= '|' . $range['from'] . '|' . $range['until'];
         }
-        if ($dismiss === 'content') { $key .= '|' . $post->post_title . '|' . $post->post_content; }
-        return ['id' => $post->ID, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post),
+        if ($dismiss === 'content') { $key .= '|' . $post->post_title . '|' . $post->post_content;
+            if ($button_text !== '' || $button_url !== '') { $key .= '|' . $button_text . '|' . $button_url; } }
+        return ['id' => $post->ID, 'button_text' => $button_text, 'button_url' => $button_url, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post),
             'columns' => max(1, min(6, (int) get_post_meta($post->ID, '_zzznm_columns', true))),
             'until' => $range['until'], 'key' => 'zzznm_closed_' . md5($key)];
     }
