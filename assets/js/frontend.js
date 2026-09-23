@@ -175,7 +175,9 @@
     if (complianzHeld || !current || current.key !== post.key || now() >= post.until) return;
     dialog = element('dialog', 'zzznm-dialog');
     dialog.setAttribute('aria-label', post.heading || 'Website-Hinweis');
-    const close = element('button', 'zzznm-close', '×');
+    const close = element('button', 'zzznm-close');
+    const closeIcon = element('span', 'zzznm-close-icon', '×');
+    close.append(closeIcon);
     close.type = 'button';
     close.setAttribute('aria-label', config.close);
     const inner = element('div', 'zzznm-dialog-content');
