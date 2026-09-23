@@ -129,6 +129,12 @@ final class ZZZNM_Admin {
         }
         echo '<p>Zeitzone: <strong>' . esc_html(wp_timezone_string()) . '</strong>. Das Ende ist exklusiv: Ein weiterer Hinweis darf genau dann beginnen.</p>';
         if ($popup) {
+            if ($post->post_status !== 'auto-draft') {
+                $preview_url = add_query_arg(['zzznm_preview' => $post->ID, 'zzznm_nonce' => wp_create_nonce('zzznm_preview_' . $post->ID)], home_url('/'));
+                echo '<p><a class="button button-secondary" href="' . esc_url($preview_url) . '" target="_blank" rel="noopener">Popup-Vorschau öffnen</a></p><p class="description">Zeigt den zuletzt gespeicherten Inhalt mit dem ausgewählten Template. Änderungen bitte zuerst speichern. Nur für Administratoren; Zeitraum, Schließregel und Complianz-Sperre werden in dieser Vorschau ignoriert.</p>';
+            } else {
+                echo '<p>Bitte zuerst als Entwurf speichern, danach ist die Popup-Vorschau verfügbar.</p>';
+            }
             echo '<p><label for="zzznm-dismiss"><strong>Nach dem Schließen</strong></label><br><select id="zzznm-dismiss" name="zzznm_dismiss">';
             foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->dismiss_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';

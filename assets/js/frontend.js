@@ -10,6 +10,7 @@
   let complianzHeld = false, complianzPoll, complianzRelease;
   const bannerSelector = '.cmplz-cookiebanner, .cmplz-soft-cookiewall.cmplz-show';
   function complianzBlocks() {
+    if (config.adminPreview) return false;
     const banners = [...document.querySelectorAll(bannerSelector)];
     const detected = config.complianzExpected || typeof window.cmplz_get_banner_status === 'function'
       || window.complianz || banners.length || document.getElementById('cmplz-cookiebanner-js');
@@ -124,7 +125,7 @@
   }
   function remember(post) {
     seen.add(post.key);
-    if ((post.dismiss || 'content') !== 'always') storage.set(post.key);
+    if (!config.adminPreview && (post.dismiss || 'content') !== 'always') storage.set(post.key);
   }
   function closeCurrent() {
     clearTimeout(showTimer);
@@ -210,7 +211,7 @@
       return;
     }
     closeCurrent();
-    if (seen.has(post.key) || ((post.dismiss || 'content') !== 'always' && storage.has(post.key))) return;
+    if (seen.has(post.key) || (!config.adminPreview && (post.dismiss || 'content') !== 'always' && storage.has(post.key))) return;
     current = { key: post.key, post, template: 0 };
     showTimer = setTimeout(() => show(post, state.template), state.settings.delay);
     const expire = () => {
@@ -384,15 +385,21 @@
     try {
       const response = await fetch(config.endpoint, { method: 'POST', credentials: 'same-origin',
         cache: 'no-store', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=zzznm_state', signal: controller.signal });
+        body: config.adminPreview
+          ? new URLSearchParams({ action: 'zzznm_preview_state', zzznm_preview: config.previewId, zzznm_nonce: config.previewNonce }).toString()
+          : 'action=zzznm_state', signal: controller.signal });
       if (!response.ok) throw new Error('Unable to load notices');
       const payload = await response.json();
       if (!payload.success) throw new Error('Invalid notice response');
+      const previewError = document.querySelector('[data-zzznm-preview-error]');
+      if (previewError) previewError.textContent = '';
       state = payload.data;
       serverOffset = state.now * 1000 - Date.now();
       bindElementor(); syncPopup(); syncTickers();
       next = Math.max(1000, Math.min(60000, (state.next - state.now) * 1000));
     } catch (_) {
+      const previewError = document.querySelector('[data-zzznm-preview-error]');
+      if (previewError) previewError.textContent = ' Vorschau konnte nicht geladen werden. Bitte im Popup-Beitrag neu öffnen.';
       // Fail closed: stale notices must not remain visible after a network failure.
       closeCurrent();
       if (state) { state.popup = null; state.tickers = []; fillSlots(); syncTickers(); }
@@ -401,6 +408,9 @@
     }
   }
   function start() {
+    if (config.adminPreview) document.querySelector('[data-zzznm-preview-reopen]')?.addEventListener('click', () => {
+      seen.clear(); closeCurrent(); refresh();
+    });
     ['cmplz_before_cookiebanner', 'cmplz_cookie_banner_data', 'cmplz_cookie_warning_loaded',
       'cmplz_banner_status', 'cmplz_status_change', 'cmplz_enable_category', 'cmplz_revoke']
       .forEach(name => document.addEventListener(name, updateComplianz));

@@ -69,3 +69,6 @@
 .zzznm-button { display: inline-block; margin-top: 1rem; padding: .65em 1.2em; border-radius: 4px; background: var(--zzznm-button-background, #193f33); color: var(--zzznm-button-color, #fff); text-decoration: none; }
 .zzznm-button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 a[data-zzznm-link][hidden] { display: none !important; }
+
+.zzznm-preview-banner { position: fixed; bottom: 12px; left: 12px; right: 12px; z-index: 2147483647; padding: 12px 16px; background: #fff7d6; color: #222; border: 1px solid #a77e00; font: 14px/1.5 sans-serif; box-shadow: 0 2px 10px #0003; }
+.zzznm-preview-banner button { margin-left: 1em; cursor: pointer; }

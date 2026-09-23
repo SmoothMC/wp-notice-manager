@@ -27,6 +27,7 @@ jobs:
           find . -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
           php tests/schedule.php
           php tests/updater.php
+          php tests/preview.php
           node --check assets/js/frontend.js
       - name: Build ZIP and metadata
         env:

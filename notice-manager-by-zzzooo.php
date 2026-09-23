@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Notice Manager by ZZZOOO
  * Description: Planbare Popups und Ticker. Eigenständige Popup-Ausgabe oder ein gemeinsames Elementor-Pro-Template.
- * Version: 1.0.6
+ * Version: 1.0.7
  * Plugin URI: https://github.com/SmoothMC/wp-notice-manager
  * Update URI: https://github.com/SmoothMC/wp-notice-manager
  * Author: Mikka | ZZZOOO Studio
@@ -15,7 +15,7 @@
 
 if (!defined('ABSPATH')) { exit; }
 define('ZZZNM_FILE', __FILE__);
-define('ZZZNM_VERSION', '1.0.6');
+define('ZZZNM_VERSION', '1.0.7');
 require_once __DIR__ . '/includes/class-updater.php';
 new ZZZNM_Updater();
 require_once __DIR__ . '/includes/class-notice-manager.php';

@@ -25,19 +25,25 @@ const root = path.resolve(__dirname, '..');
     }
     else await route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="de"><title>Notice Manager Test</title><body><button id="before">Kontakt</button><section data-zzznm-ticker class="zzznm-ticker" hidden></section><div data-zzznm-popup="heading"></div></body></html>' });
   });
-  async function load({ reduced = false, elementor = false, divi = false } = {}) {
+  async function load({ reduced = false, elementor = false, divi = false, adminPreview = false } = {}) {
     await page.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' });
     await page.goto('https://notices.test/');
     await page.addStyleTag({ path: path.join(root, 'assets/css/frontend.css') });
-    await page.evaluate(({ elementor }) => {
+    await page.evaluate(({ elementor, adminPreview }) => {
       window.ZZZNM = { endpoint: 'https://notices.test/ajax', close: 'Schließen', pause: 'Pause', play: 'Fortsetzen', next: 'Nächste Meldung' };
+      if (adminPreview) {
+        Object.assign(window.ZZZNM, { adminPreview: true, previewId: 12, previewNonce: 'test-nonce' });
+        const banner = document.createElement('aside'); banner.innerHTML = '<button data-zzznm-preview-reopen>Erneut öffnen</button><span data-zzznm-preview-error></span>'; document.body.append(banner);
+        window.cmplz_get_banner_status = () => 'not-dismissed';
+        localStorage.setItem('preview-key', '1');
+      }
       if (elementor) {
         window.elementorProFrontend = { modules: { popup: { showPopup({ id }) {
           const modal = document.createElement('div'); modal.id = `elementor-popup-modal-${id}`;
           modal.innerHTML = '<div data-zzznm-popup="notice"></div>'; document.body.append(modal);
         } } } };
       }
-    }, { elementor });
+    }, { elementor, adminPreview });
     if (divi) await page.evaluate(() => { const source = document.createElement('div'); source.id = 'zzznm-divi-template'; source.hidden = true; source.dataset.templateId = '200'; source.innerHTML = '<div class="zzznm-divi-content"><div data-zzznm-popup="notice"></div></div>'; document.body.append(source); });
     await page.addScriptTag({ path: path.join(root, 'assets/js/frontend.js') });
     await page.waitForTimeout(250);
@@ -137,6 +143,14 @@ const root = path.resolve(__dirname, '..');
   assert.equal(await page.locator('.zzznm-button').count(), 0, 'Unsafe URLs rejected');
   data.popup.button_url = ''; await load();
   assert.equal(await page.locator('.zzznm-button').count(), 0, 'Empty URLs hide button');
+  data = fresh(); data.popup.key = 'preview-key'; data.popup.dismiss = 'always';
+  await load({ adminPreview: true }); await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.locator('dialog h2').textContent(), 'Urlaub', 'Preview ignores saved dismissal and CMP');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('dialog').count(), 0);
+  await page.locator('[data-zzznm-preview-reopen]').click();
+  await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem('preview-key')), '1', 'Preview preserves visitor storage');
   assert.deepEqual(errors, []);
   await browser.close();
   console.log('PASS: standalone, Escape, persistent dismissal, changed content, rotation, marquee, reduced motion, empty ticker, expiry, Elementor adapter, fallback, mobile layout.');

@@ -127,10 +127,10 @@ final class ZZZNM_Manager {
             && has_term('popup', 'layout_tag', $id);
     }
 
-    public function divi_template_id() {
+    public function divi_template_id($preview = false) {
         $settings = $this->settings();
         $id = (int) $settings['divi_template_id'];
-        return $settings['enabled'] && $settings['renderer'] === 'divi' && $this->valid_divi_template($id) ? $id : 0;
+        return ($preview || $settings['enabled']) && $settings['renderer'] === 'divi' && $this->valid_divi_template($id) ? $id : 0;
     }
 
     public function template_id() {

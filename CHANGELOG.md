@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7 — 2026-09-23
+
+- Geschützte Popup-Vorschau für Administratoren direkt im Popup-Beitrag.
+- Gespeicherte Entwürfe und abgelaufene Popups mit aktuellem Template ansehen.
+- Vorschau unabhängig von Zeitplanung, Schließregel und Complianz; Besuchereinstellungen bleiben unverändert.
+
 ## 1.0.6 — 2026-09-23
 
 - Optionaler Button-Text und Button-Link pro Popup.

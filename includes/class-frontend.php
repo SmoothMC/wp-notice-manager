@@ -5,9 +5,12 @@ final class ZZZNM_Frontend {
     private $manager;
     private $divi_html = '';
     private $divi_id = 0;
+    private $preview_id = 0;
 
     public function __construct($manager) {
         $this->manager = $manager;
+        add_action('template_redirect', [$this, 'preview_page'], 0);
+        add_action('wp_ajax_zzznm_preview_state', [$this, 'preview_state']);
         add_action('wp_enqueue_scripts', [$this, 'assets'], 100);
         add_action('wp_print_footer_scripts', [$this, 'complianz_config'], 0);
         add_action('wp_footer', [$this, 'prepare_template'], 5);
@@ -21,18 +24,55 @@ final class ZZZNM_Frontend {
         }
     }
 
+    public function authorized_preview($input) {
+        $id = isset($input['zzznm_preview']) && is_scalar($input['zzznm_preview']) ? absint($input['zzznm_preview']) : 0;
+        $nonce = isset($input['zzznm_nonce']) && is_string($input['zzznm_nonce']) ? sanitize_text_field(wp_unslash($input['zzznm_nonce'])) : '';
+        if (!$id || !current_user_can('manage_options') || !current_user_can('edit_post', $id)
+            || !wp_verify_nonce($nonce, 'zzznm_preview_' . $id)) { return 0; }
+        $post = get_post($id);
+        return $post && $post->post_type === ZZZNM_Manager::POPUP
+            && !in_array($post->post_status, ['trash', 'auto-draft', 'inherit'], true) ? $id : 0;
+    }
+
+    public function preview_page() {
+        if (!isset($_GET['zzznm_preview'])) { return; }
+        if (!defined('DONOTCACHEPAGE')) { define('DONOTCACHEPAGE', true); }
+        nocache_headers();
+        header('X-Robots-Tag: noindex, nofollow', true);
+        header('Referrer-Policy: no-referrer', true);
+        $this->preview_id = $this->authorized_preview($_GET);
+        if (!$this->preview_id) { wp_die('Diese Popup-Vorschau ist nicht verfügbar. Bitte im Popup-Beitrag neu öffnen.', 'Popup-Vorschau', ['response' => 403]); }
+    }
+
+    public function preview_state() {
+        nocache_headers();
+        $id = $this->authorized_preview($_POST);
+        if (!$id) { wp_send_json_error(['message' => 'Vorschau nicht autorisiert. Bitte neu öffnen.'], 403); return; }
+        $now = time();
+        $popup = $this->manager->popup_data(get_post($id));
+        $popup['until'] = $now + 3600;
+        $popup['dismiss'] = 'always';
+        $settings = $this->manager->settings();
+        $settings['delay'] = 0;
+        wp_send_json_success(['popup' => $popup, 'tickers' => [], 'settings' => $settings,
+            'template' => $this->manager->template_id(), 'divi_template' => $this->manager->divi_template_id(true),
+            'now' => $now, 'next' => $now + 60]);
+    }
+
     public function assets() {
         $this->render_divi_template();
         wp_enqueue_style('zzznm', plugins_url('assets/css/frontend.css', ZZZNM_FILE), [], ZZZNM_VERSION);
         wp_enqueue_script('zzznm', plugins_url('assets/js/frontend.js', ZZZNM_FILE), [], ZZZNM_VERSION, true);
         wp_localize_script('zzznm', 'ZZZNM', ['endpoint' => admin_url('admin-ajax.php'),
             'complianzDelay' => (int) $this->manager->settings()['complianz_delay'],
-            'preview' => is_preview() || isset($_GET['elementor-preview']) || isset($_GET['et_fb']),
+            'preview' => !$this->preview_id && (is_preview() || isset($_GET['elementor-preview']) || isset($_GET['et_fb'])),
+            'adminPreview' => (bool) $this->preview_id, 'previewId' => $this->preview_id,
+            'previewNonce' => $this->preview_id ? wp_create_nonce('zzznm_preview_' . $this->preview_id) : '',
             'close' => 'Hinweis schließen', 'pause' => 'Pause', 'play' => 'Fortsetzen', 'next' => 'Nächste Meldung']);
     }
 
     private function render_divi_template() {
-        $id = $this->manager->divi_template_id();
+        $id = $this->manager->divi_template_id((bool) $this->preview_id);
         if (!$id) { return; }
         $post = get_post($id);
         if (!$post || trim($post->post_content) === '') { return; }
@@ -47,13 +87,14 @@ final class ZZZNM_Frontend {
     }
 
     public function prepare_template() {
+        if ($this->preview_id) { echo '<aside class="zzznm-preview-banner" role="status">Popup-Vorschau – zuletzt gespeicherter Inhalt. Nur für dich sichtbar. <button type="button" data-zzznm-preview-reopen>Erneut öffnen</button><span data-zzznm-preview-error></span></aside>'; }
         if ($this->divi_id) {
             echo '<div id="zzznm-divi-template" data-template-id="' . (int) $this->divi_id . '" hidden><div class="zzznm-divi-content et-l et-l--body">' . $this->divi_html . '</div></div>';
         }
 
         $id = $this->manager->template_id();
         $callback = ['ElementorPro\\Modules\\Popup\\Module', 'add_popup_to_location'];
-        if ($id && is_callable($callback) && $this->manager->settings()['enabled']) {
+        if ($id && is_callable($callback) && ($this->preview_id || $this->manager->settings()['enabled'])) {
             call_user_func($callback, $id);
         }
     }
@@ -88,7 +129,7 @@ final class ZZZNM_Frontend {
     }
 
     public function popup_shortcode($part) {
-        if (!$this->manager->is_enabled(ZZZNM_Manager::POPUP)) { return ''; }
+        if (!$this->preview_id && !$this->manager->is_enabled(ZZZNM_Manager::POPUP)) { return ''; }
         // Populated from the uncached endpoint, including in cached Elementor markup.
         $tag = in_array($part, ['heading', 'button', 'button_text'], true) ? 'span' : 'div';
         return '<' . $tag . ' data-zzznm-popup="' . esc_attr($part) . '"></' . $tag . '>';
