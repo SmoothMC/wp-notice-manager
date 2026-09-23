@@ -102,7 +102,32 @@
       return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? value : '';
     } catch (_) { return ''; }
   }
+  function fillDiviHeadings() {
+    // Divi 4 heading fields can preserve shortcode text instead of running it.
+    // Only replace our inline placeholders, never arbitrary shortcodes or HTML.
+    document.querySelectorAll('.zzznm-divi-content h1, .zzznm-divi-content h2, .zzznm-divi-content h3, .zzznm-divi-content h4, .zzznm-divi-content h5, .zzznm-divi-content h6').forEach(heading => {
+      const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+      const texts = [];
+      while (walker.nextNode()) texts.push(walker.currentNode);
+      texts.forEach(text => {
+        if (text.parentElement.closest('[data-zzznm-popup]')) return;
+        const pattern = /\[(?:notice|praxis)_popup_(heading|button_text)\]/g;
+        const value = text.nodeValue;
+        let match, offset = 0;
+        const fragment = document.createDocumentFragment();
+        while ((match = pattern.exec(value))) {
+          fragment.append(document.createTextNode(value.slice(offset, match.index)));
+          const slot = element('span'); slot.dataset.zzznmPopup = match[1];
+          fragment.append(slot); offset = pattern.lastIndex;
+        }
+        if (!offset) return;
+        fragment.append(document.createTextNode(value.slice(offset)));
+        text.replaceWith(fragment);
+      });
+    });
+  }
   function fillSlots() {
+    fillDiviHeadings();
     document.querySelectorAll('[data-zzznm-popup]').forEach(slot => {
       const post = state?.popup;
       const signature = post ? JSON.stringify([post.key, post.heading, post.html, post.columns, post.button_text, post.button_url]) : '';

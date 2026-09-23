@@ -63,7 +63,8 @@
 .zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-item { display: flex; align-items: center; }
 
 #zzznm-divi-template[hidden] { display: none !important; }
-.zzznm-dialog-divi { width: min(960px, calc(100vw - 32px)); padding: 40px 0 0; }
+.zzznm-dialog.zzznm-dialog-divi { width: min(640px, calc(100vw - 32px)); padding: 0; background: transparent; }
+.zzznm-dialog-divi > .zzznm-dialog-content { padding: 0; margin: 0; background: transparent; }
 .zzznm-dialog-divi .zzznm-close { z-index: 10; }
 
 .zzznm-button { display: inline-block; margin-top: 1rem; padding: .65em 1.2em; border-radius: 4px; background: var(--zzznm-button-background, #193f33); color: var(--zzznm-button-color, #fff); text-decoration: none; }

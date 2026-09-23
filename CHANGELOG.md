@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.8 — 2026-09-23
+
+- Divi-Dialog mit maximal 640 px Breite, ohne Innenabstand und mit transparentem Hintergrund.
+- Popup-Überschrift und Button-Text werden auch in Divi-Heading-Modulen ersetzt, wenn Divi die Shortcodes als Text ausgibt.
+
 ## 1.0.7 — 2026-09-23
 
 - Geschützte Popup-Vorschau für Administratoren direkt im Popup-Beitrag.

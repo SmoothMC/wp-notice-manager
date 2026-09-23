@@ -44,7 +44,7 @@ const root = path.resolve(__dirname, '..');
         } } } };
       }
     }, { elementor, adminPreview });
-    if (divi) await page.evaluate(() => { const source = document.createElement('div'); source.id = 'zzznm-divi-template'; source.hidden = true; source.dataset.templateId = '200'; source.innerHTML = '<div class="zzznm-divi-content"><div data-zzznm-popup="notice"></div></div>'; document.body.append(source); });
+    if (divi) await page.evaluate(() => { const source = document.createElement('div'); source.id = 'zzznm-divi-template'; source.hidden = true; source.dataset.templateId = '200'; source.innerHTML = '<div class="zzznm-divi-content"><h3 class="et_pb_module_header">Info: [notice_popup_heading]</h3><div data-zzznm-popup="notice"></div></div>'; document.body.append(source); });
     await page.addScriptTag({ path: path.join(root, 'assets/js/frontend.js') });
     await page.waitForTimeout(250);
   }
@@ -118,6 +118,12 @@ const root = path.resolve(__dirname, '..');
   data = fresh(); data.popup.key = 'divi'; data.divi_template = 200;
   await load({ divi: true }); await page.locator('dialog[open]').waitFor();
   assert.equal(await page.locator('dialog .zzznm-divi-content h2').textContent(), 'Urlaub');
+  assert.equal(await page.locator('dialog h3').textContent(), 'Info: Urlaub');
+  assert.ok(await page.locator('dialog').evaluate(el => el.getBoundingClientRect().width <= 640));
+  assert.equal(await page.locator('dialog').evaluate(el => getComputedStyle(el).padding), '0px');
+  assert.equal(await page.locator('dialog .zzznm-dialog-content').evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)');
+  await page.setViewportSize({ width: 375, height: 667 });
+  assert.equal(await page.locator('dialog').evaluate(el => getComputedStyle(el).padding), '0px');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#zzznm-divi-template .zzznm-divi-content').count(), 1);
   data.popup.dismiss = 'always'; await load({ divi: true });
