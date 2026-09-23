@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) { exit; }
 
 final class ZZZNM_Frontend {
     private $manager;
+    private $divi_html = '';
+    private $divi_id = 0;
 
     public function __construct($manager) {
         $this->manager = $manager;
@@ -20,6 +22,7 @@ final class ZZZNM_Frontend {
     }
 
     public function assets() {
+        $this->render_divi_template();
         wp_enqueue_style('zzznm', plugins_url('assets/css/frontend.css', ZZZNM_FILE), [], ZZZNM_VERSION);
         wp_enqueue_script('zzznm', plugins_url('assets/js/frontend.js', ZZZNM_FILE), [], ZZZNM_VERSION, true);
         wp_localize_script('zzznm', 'ZZZNM', ['endpoint' => admin_url('admin-ajax.php'),
@@ -28,7 +31,26 @@ final class ZZZNM_Frontend {
             'close' => 'Hinweis schließen', 'pause' => 'Pause', 'play' => 'Fortsetzen', 'next' => 'Nächste Meldung']);
     }
 
+    private function render_divi_template() {
+        $id = $this->manager->divi_template_id();
+        if (!$id) { return; }
+        $post = get_post($id);
+        if (!$post || trim($post->post_content) === '') { return; }
+        // Render during enqueue, before wp_head, so Divi can collect module styles.
+        if (has_blocks($post->post_content) && class_exists('WP_Block_Type_Registry')
+            && WP_Block_Type_Registry::get_instance()->is_registered('divi/global-layout')) {
+            $html = do_blocks('<!-- wp:divi/global-layout {"globalModule":"' . $id . '"} /-->');
+        } elseif (!has_blocks($post->post_content) && function_exists('et_builder_render_layout')) {
+            $html = et_builder_render_layout($post->post_content);
+        } else { return; }
+        if (trim($html) !== '') { $this->divi_html = $html; $this->divi_id = $id; }
+    }
+
     public function prepare_template() {
+        if ($this->divi_id) {
+            echo '<div id="zzznm-divi-template" data-template-id="' . (int) $this->divi_id . '" hidden><div class="zzznm-divi-content et-l et-l--body">' . $this->divi_html . '</div></div>';
+        }
+
         $id = $this->manager->template_id();
         $callback = ['ElementorPro\\Modules\\Popup\\Module', 'add_popup_to_location'];
         if ($id && is_callable($callback) && $this->manager->settings()['enabled']) {
@@ -62,7 +84,7 @@ final class ZZZNM_Frontend {
         }
         wp_send_json_success(['popup' => $popups ? $this->manager->popup_data($popups[0]) : null,
             'tickers' => $tickers, 'settings' => $settings, 'template' => $this->manager->template_id(),
-            'now' => $now, 'next' => $next]);
+            'divi_template' => $this->manager->divi_template_id(), 'now' => $now, 'next' => $next]);
     }
 
     public function popup_shortcode($part) {

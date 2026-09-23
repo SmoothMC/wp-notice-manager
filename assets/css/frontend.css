@@ -61,3 +61,7 @@
 .zzznm-ticker-title { white-space: nowrap; }
 .zzznm-ticker-body, .zzznm-ticker-body p { display: inline; }
 .zzznm-ticker[data-presentation="marquee"] .zzznm-ticker-item { display: flex; align-items: center; }
+
+#zzznm-divi-template[hidden] { display: none !important; }
+.zzznm-dialog-divi { width: min(960px, calc(100vw - 32px)); padding: 40px 0 0; }
+.zzznm-dialog-divi .zzznm-close { z-index: 10; }

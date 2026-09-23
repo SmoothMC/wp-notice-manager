@@ -25,7 +25,7 @@ const root = path.resolve(__dirname, '..');
     }
     else await route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="de"><title>Notice Manager Test</title><body><button id="before">Kontakt</button><section data-zzznm-ticker class="zzznm-ticker" hidden></section><div data-zzznm-popup="heading"></div></body></html>' });
   });
-  async function load({ reduced = false, elementor = false } = {}) {
+  async function load({ reduced = false, elementor = false, divi = false } = {}) {
     await page.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' });
     await page.goto('https://notices.test/');
     await page.addStyleTag({ path: path.join(root, 'assets/css/frontend.css') });
@@ -38,6 +38,7 @@ const root = path.resolve(__dirname, '..');
         } } } };
       }
     }, { elementor });
+    if (divi) await page.evaluate(() => { const source = document.createElement('div'); source.id = 'zzznm-divi-template'; source.hidden = true; source.dataset.templateId = '200'; source.innerHTML = '<div class="zzznm-divi-content"><div data-zzznm-popup="notice"></div></div>'; document.body.append(source); });
     await page.addScriptTag({ path: path.join(root, 'assets/js/frontend.js') });
     await page.waitForTimeout(250);
   }
@@ -108,6 +109,15 @@ const root = path.resolve(__dirname, '..');
   await page.screenshot({ path: '/tmp/zzznm-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.screenshot({ path: '/tmp/zzznm-desktop.png', fullPage: true });
+  data = fresh(); data.popup.key = 'divi'; data.divi_template = 200;
+  await load({ divi: true }); await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.locator('dialog .zzznm-divi-content h2').textContent(), 'Urlaub');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#zzznm-divi-template .zzznm-divi-content').count(), 1);
+  data.popup.dismiss = 'always'; await load({ divi: true });
+  await page.locator('dialog[open]').waitFor();
+  await page.keyboard.press('Escape');
+  await load({ divi: true }); await page.locator('dialog[open]').waitFor();
   assert.deepEqual(errors, []);
   await browser.close();
   console.log('PASS: standalone, Escape, persistent dismissal, changed content, rotation, marquee, reduced motion, empty ticker, expiry, Elementor adapter, fallback, mobile layout.');

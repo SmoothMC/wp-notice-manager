@@ -74,6 +74,24 @@ $registered = []; $manager->register_types();
 check($registered === [ZZZNM_Manager::POPUP], 'Popup independent of ticker');
 $options[ZZZNM_Manager::OPTION] = [];
 check($manager->is_enabled(ZZZNM_Manager::TICKER), 'Existing installs retain ticker');
+check($manager->dismiss_mode(999) === 'content', 'Popup default is content');
+$meta[999]['_zzznm_dismiss'] = 'always';
+check($manager->dismiss_mode(999) === 'always', 'Per popup mode preserved');
+check($manager->dismiss_mode(998) === 'content', 'Other popup unaffected');
+$meta[999]['_zzznm_dismiss'] = 'invalid';
+check($manager->dismiss_mode(999) === 'content', 'Invalid mode falls back');
+function get_post_type($id) { return $GLOBALS['posts'][$id]->post_type ?? ''; }
+function get_post_status($id) { return $GLOBALS['posts'][$id]->post_status ?? ''; }
+function has_term($term, $taxonomy, $id) { return $taxonomy === 'layout_tag' && in_array($term, $GLOBALS['tags'][$id] ?? [], true); }
+fixture(800, 0, 0, 'et_pb_layout');
+check(!$manager->valid_divi_template(800), 'Untagged Divi layout rejected');
+$tags[800] = ['popup'];
+check($manager->valid_divi_template(800), 'Published Popup-tagged Divi layout accepted');
+$posts[800]->post_status = 'draft';
+check(!$manager->valid_divi_template(800), 'Draft Divi layout rejected');
+$posts[800]->post_status = 'publish'; $posts[800]->post_type = 'page';
+check(!$manager->valid_divi_template(800), 'Other post types rejected despite tag');
+$posts = []; $meta = [];
 $parse = [ZZZNM_Manager::class, 'parse_date'];
 check($parse('') === 0, 'Empty dates rejected');
 check($parse('2026-02-30T12:00') === 0, 'Invalid calendar date rejected');
@@ -122,10 +140,10 @@ check($admin->validate_post($data, ['ID' => 9, 'meta_input' => ['_zzznm_from' =>
 $post = fixture(7, 500, 600);
 $key = $manager->popup_data($post)['key']; $post->post_content = 'Neu';
 check($manager->popup_data($post)['key'] !== $key, 'Content changes reset dismissal');
-$options[ZZZNM_Manager::OPTION] = ['dismiss' => 'forever'];
+$meta[$post->ID]['_zzznm_dismiss'] = 'forever';
 $key = $manager->popup_data($post)['key']; $post->post_content = 'Wieder neu';
 check($manager->popup_data($post)['key'] === $key, 'Permanent dismissal survives changes');
-$options[ZZZNM_Manager::OPTION] = ['dismiss' => 'date'];
+$meta[$post->ID]['_zzznm_dismiss'] = 'date';
 $key = $manager->popup_data($post)['key']; $post->post_content = 'Noch einmal';
 check($manager->popup_data($post)['key'] === $key, 'Date dismissal ignores content changes');
 $meta[7]['_zzznm_until'] = 650;

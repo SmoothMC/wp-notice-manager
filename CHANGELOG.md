@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5 — 2026-09-23
+
+- Schließverhalten pro Popup statt global; Standard: erneut bei geändertem Inhalt oder Zeitraum.
+- Zentrales Divi-Template aus veröffentlichten Bibliothekslayouts mit Tag „Popup“.
+- Divi-Ausgabe im Plugin-Dialog mit Zeitplanung und Complianz-Sperre.
+
 ## 1.0.4 — 2026-09-22
 
 - Popup und Ticker unabhängig deaktivierbar, einschließlich des jeweiligen Posttyps; Inhalte bleiben erhalten.

@@ -50,10 +50,10 @@ final class ZZZNM_Admin {
         return ['enabled' => empty($input['enabled']) ? 0 : 1,
             'ticker_enabled' => empty($input['ticker_enabled']) ? 0 : 1,
             'ticker_controls' => empty($input['ticker_controls']) ? 0 : 1,
-            'renderer' => $enum('renderer', ['standalone', 'elementor'], 'standalone'),
+            'renderer' => $enum('renderer', ['standalone', 'elementor', 'divi'], 'standalone'),
             'template_id' => $id, 'delay' => min(60000, absint($input['delay'] ?? 400)),
             'complianz_delay' => max(0, min(60000, (int) ($input['complianz_delay'] ?? 300))),
-            'dismiss' => $enum('dismiss', ['always', 'content', 'date', 'forever'], 'content'),
+            'divi_template_id' => $this->manager->valid_divi_template(absint($input['divi_template_id'] ?? 0)) ? absint($input['divi_template_id']) : 0,
             'ticker_mode' => $enum('ticker_mode', ['rotate', 'marquee'], 'rotate'),
             'interval' => max(2, min(60, absint($input['interval'] ?? 6))),
             'speed' => max(10, min(200, absint($input['speed'] ?? 45)))];
@@ -80,12 +80,18 @@ final class ZZZNM_Admin {
         echo '<p>Aktiviere die benötigten Bereiche. Deaktivierte Bereiche werden auf der Website und in der Verwaltung ausgeblendet. Gespeicherte Beiträge bleiben erhalten.</p><form action="options.php" method="post">';
         settings_fields('zzznm');
         echo '<h2>Popups</h2><table class="form-table"><tr><th>Popup-Funktion</th><td><label><input type="checkbox" name="zzznm_settings[enabled]" value="1" ' . checked($settings['enabled'], 1, false) . '> Popups aktivieren (inklusive Posttyp)</label></td></tr>';
-        $this->select('renderer', 'Darstellung', ['standalone' => 'Standalone (ohne Page Builder)', 'elementor' => 'Elementor Pro'], $settings);
+        $this->select('renderer', 'Darstellung', ['standalone' => 'Standalone (ohne Page Builder)', 'elementor' => 'Elementor Pro', 'divi' => 'Divi-Bibliothek'], $settings);
         $this->select('template_id', 'Standard-Elementor-Template', $templates, $settings);
-        $this->select('dismiss', 'Nach dem Schließen', ['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'], $settings);
+        $divi_templates = [0 => 'Kein Template – Standalone verwenden'];
+        foreach (get_posts(['post_type' => 'et_pb_layout', 'post_status' => 'publish', 'numberposts' => -1,
+            'tax_query' => [['taxonomy' => 'layout_tag', 'field' => 'slug', 'terms' => ['popup']]]]) as $layout) {
+            $divi_templates[$layout->ID] = $layout->post_title . ' (#' . $layout->ID . ')';
+        }
+        $this->select('divi_template_id', 'Standard-Divi-Template (Tag: Popup)', $divi_templates, $settings);
+
         echo '<tr><th><label for="zzznm-delay">Verzögerung (Millisekunden)</label></th><td><input id="zzznm-delay" name="zzznm_settings[delay]" type="number" min="0" max="60000" step="100" value="' . esc_attr($settings['delay']) . '"></td></tr>';
         echo '<tr><th><label for="zzznm-complianz-delay">Verzögerung nach Complianz-Freigabe (ms)</label></th><td><input id="zzznm-complianz-delay" name="zzznm_settings[complianz_delay]" type="number" min="0" max="60000" step="1" value="' . esc_attr($settings['complianz_delay']) . '" aria-describedby="zzznm-complianz-delay-help"><p class="description" id="zzznm-complianz-delay-help">Wartezeit nach dem Schließen des Cookie-Banners. Standard: 300 ms. Die allgemeine Popup-Verzögerung kommt zusätzlich hinzu. 0 = keine zusätzliche Wartezeit.</p></td></tr></table>';
-        echo '<p>Ohne verfügbares Elementor Pro oder gültiges Template wird das Standalone-Popup verwendet. Im Elementor-Template die Shortcodes unten einsetzen. Automatische Elementor-Trigger für dieses Template deaktivieren: Die Zeitplanung übernimmt der Notice Manager.</p>';
+        echo '<p>Ohne verfügbares Elementor Pro oder gültiges Template wird das Standalone-Popup verwendet. In Elementor- und Divi-Templates die Shortcodes unten einsetzen. Divi: veröffentlichtes Layout aus der Divi-Bibliothek mit dem Tag „Popup“ auswählen. Die Option „Nach dem Schließen“ befindet sich im jeweiligen Popup-Beitrag. Automatische Elementor-Trigger für dieses Template deaktivieren: Die Zeitplanung übernimmt der Notice Manager.</p>';
         echo '<h2>Ticker</h2><table class="form-table"><tr><th>Ticker-Funktion</th><td><label><input type="checkbox" name="zzznm_settings[ticker_enabled]" value="1" ' . checked($settings['ticker_enabled'], 1, false) . '> Ticker aktivieren (inklusive Posttyp)</label></td></tr>';
         echo '<tr><th>Ticker-Steuerung</th><td><label><input type="checkbox" name="zzznm_settings[ticker_controls]" value="1" ' . checked($settings['ticker_controls'], 1, false) . '> Ticker-Steuerung anzeigen (Pause / Weiter)</label></td></tr>';
         $this->select('ticker_mode', 'Standard-Darstellung', ['rotate' => 'Wechselnde Meldungen', 'marquee' => 'Durchlaufendes Laufband'], $settings);
@@ -123,6 +129,11 @@ final class ZZZNM_Admin {
         }
         echo '<p>Zeitzone: <strong>' . esc_html(wp_timezone_string()) . '</strong>. Das Ende ist exklusiv: Ein weiterer Hinweis darf genau dann beginnen.</p>';
         if ($popup) {
+            echo '<p><label for="zzznm-dismiss"><strong>Nach dem Schließen</strong></label><br><select id="zzznm-dismiss" name="zzznm_dismiss">';
+            foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
+                echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->dismiss_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
+            }
+            echo '</select></p>';
             $columns = max(1, (int) get_post_meta($post->ID, '_zzznm_columns', true));
             echo '<p><label for="zzznm-columns">Textspalten</label> <select id="zzznm-columns" name="zzznm_columns">';
             for ($i = 1; $i <= 6; $i++) { echo '<option ' . selected($columns, $i, false) . '>' . $i . '</option>'; }
@@ -227,6 +238,10 @@ final class ZZZNM_Admin {
         }
         if ($post->post_type === ZZZNM_Manager::TICKER && isset($_POST['zzznm_ticker_title'])) {
             update_post_meta($id, '_zzznm_ticker_title', $this->input('zzznm_ticker_title'));
+        }
+        if ($post->post_type === ZZZNM_Manager::POPUP && isset($_POST['zzznm_dismiss'])) {
+            $dismiss = $this->input('zzznm_dismiss');
+            update_post_meta($id, '_zzznm_dismiss', in_array($dismiss, ['content', 'date', 'forever', 'always'], true) ? $dismiss : 'content');
         }
         update_post_meta($id, '_zzznm_columns', max(1, min(6, (int) $this->input('zzznm_columns'))));
     }

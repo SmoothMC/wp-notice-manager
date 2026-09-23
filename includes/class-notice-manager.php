@@ -33,8 +33,8 @@ final class ZZZNM_Manager {
 
     public function settings() {
         return wp_parse_args((array) get_option(self::OPTION, []), [
-            'enabled' => 1, 'ticker_enabled' => 1, 'ticker_controls' => 1, 'renderer' => 'standalone', 'template_id' => 0,
-            'delay' => 400, 'complianz_delay' => 300, 'dismiss' => 'content', 'ticker_mode' => 'rotate',
+            'enabled' => 1, 'ticker_enabled' => 1, 'ticker_controls' => 1, 'renderer' => 'standalone', 'template_id' => 0, 'divi_template_id' => 0,
+            'delay' => 400, 'complianz_delay' => 300, 'ticker_mode' => 'rotate',
             'interval' => 6, 'speed' => 45,
         ]);
     }
@@ -102,16 +102,32 @@ final class ZZZNM_Manager {
     }
 
     public function popup_data($post) {
-        $settings = $this->settings();
+        $dismiss = $this->dismiss_mode($post->ID);
         $range = $this->schedule($post->ID);
         $key = (string) $post->ID;
-        if (in_array($settings['dismiss'], ['content', 'date'], true)) {
+        if (in_array($dismiss, ['content', 'date'], true)) {
             $key .= '|' . $range['from'] . '|' . $range['until'];
         }
-        if ($settings['dismiss'] === 'content') { $key .= '|' . $post->post_title . '|' . $post->post_content; }
-        return ['id' => $post->ID, 'heading' => $post->post_title, 'html' => $this->body($post),
+        if ($dismiss === 'content') { $key .= '|' . $post->post_title . '|' . $post->post_content; }
+        return ['id' => $post->ID, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post),
             'columns' => max(1, min(6, (int) get_post_meta($post->ID, '_zzznm_columns', true))),
             'until' => $range['until'], 'key' => 'zzznm_closed_' . md5($key)];
+    }
+
+    public function dismiss_mode($id) {
+        $mode = get_post_meta($id, '_zzznm_dismiss', true);
+        return in_array($mode, ['content', 'date', 'forever', 'always'], true) ? $mode : 'content';
+    }
+
+    public function valid_divi_template($id) {
+        return $id && get_post_type($id) === 'et_pb_layout' && get_post_status($id) === 'publish'
+            && has_term('popup', 'layout_tag', $id);
+    }
+
+    public function divi_template_id() {
+        $settings = $this->settings();
+        $id = (int) $settings['divi_template_id'];
+        return $settings['enabled'] && $settings['renderer'] === 'divi' && $this->valid_divi_template($id) ? $id : 0;
     }
 
     public function template_id() {

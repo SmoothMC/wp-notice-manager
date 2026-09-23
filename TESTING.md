@@ -32,3 +32,7 @@ Der lokale Projektordner enthält keine lauffähige WordPress-Installation und k
 `php tests/schedule.php` führt die isolierten PHP-Prüfungen aus. `node tests/browser.cjs` und `node tests/complianz.cjs` benötigen Playwright und Google Chrome; `CHROME_PATH` kann einen anderen Chromium-Pfad angeben. Die Browserskripte verwenden ausschließlich simulierte Antworten und ein separates Browserprofil. Der allgemeine Browsertest erstellt zwei Ansichtsaufnahmen im temporären Verzeichnis.
 
 Die installierbare ZIP enthält keine Testskripte. Originalplugin und alte ZIP bleiben unverändert.
+
+## 1.0.5
+
+Zusätzliche isolierte Prüfungen für Popup-spezifische Schließregeln, Default/Fallback und Divi-Layout-Validierung. Browser-Test mit Divi-Markup-Doppel prüft Ausgabe, Zurücklegen des Layouts beim Schließen und erneute Anzeige bei „immer“. Eine echte Divi-Installation inklusive generierter Modul-Styles und Scripts wurde lokal nicht getestet.

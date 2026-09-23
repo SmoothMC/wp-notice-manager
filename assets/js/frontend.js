@@ -95,13 +95,16 @@
   }
   function remember(post) {
     seen.add(post.key);
-    if (state.settings.dismiss !== 'always') storage.set(post.key);
+    if ((post.dismiss || 'content') !== 'always') storage.set(post.key);
   }
   function closeCurrent() {
     clearTimeout(showTimer);
     clearTimeout(expiryTimer);
     const old = current;
     current = null;
+    if (dialog?.querySelector('.zzznm-divi-content')) {
+      document.getElementById('zzznm-divi-template')?.append(dialog.querySelector('.zzznm-divi-content'));
+    }
     if (dialog) { dialog.close(); dialog.remove(); dialog = null; }
     if (old?.template) {
       const api = window.elementorProFrontend?.modules?.popup;
@@ -121,7 +124,10 @@
     close.type = 'button';
     close.setAttribute('aria-label', config.close);
     const inner = element('div', 'zzznm-dialog-content');
-    inner.append(content(post));
+    const divi = document.getElementById('zzznm-divi-template');
+    const layout = divi && Number(divi.dataset.templateId) === Number(state.divi_template) ? divi.querySelector('.zzznm-divi-content') : null;
+    inner.append(layout || content(post));
+    if (layout) dialog.classList.add('zzznm-dialog-divi');
     dialog.append(close, inner);
     document.body.append(dialog);
     const dismiss = () => { remember(post); closeCurrent(); };
@@ -132,7 +138,9 @@
       const box = dialog.getBoundingClientRect();
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dismiss();
     });
+    fillSlots();
     dialog.showModal();
+    if (layout) window.dispatchEvent(new Event('resize'));
     close.focus();
   }
   function show(post, template, attempt = 0) {
@@ -169,11 +177,11 @@
     if (complianzHeld) return;
     if (!post || now() >= post.until) { closeCurrent(); return; }
     if (current?.key === post.key) {
-      if (dialog) dialog.querySelector('.zzznm-dialog-content').replaceChildren(content(post));
+      if (dialog && !dialog.classList.contains('zzznm-dialog-divi')) dialog.querySelector('.zzznm-dialog-content').replaceChildren(content(post));
       return;
     }
     closeCurrent();
-    if (seen.has(post.key) || (state.settings.dismiss !== 'always' && storage.has(post.key))) return;
+    if (seen.has(post.key) || ((post.dismiss || 'content') !== 'always' && storage.has(post.key))) return;
     current = { key: post.key, post, template: 0 };
     showTimer = setTimeout(() => show(post, state.template), state.settings.delay);
     const expire = () => {
