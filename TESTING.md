@@ -36,3 +36,7 @@ Die installierbare ZIP enthält keine Testskripte. Originalplugin und alte ZIP b
 ## 1.0.5
 
 Zusätzliche isolierte Prüfungen für Popup-spezifische Schließregeln, Default/Fallback und Divi-Layout-Validierung. Browser-Test mit Divi-Markup-Doppel prüft Ausgabe, Zurücklegen des Layouts beim Schließen und erneute Anzeige bei „immer“. Eine echte Divi-Installation inklusive generierter Modul-Styles und Scripts wurde lokal nicht getestet.
+
+## 1.0.9
+
+Seitenauswahl isoliert für Homepage, Archive, Posts, Seiten, ausgewählte Seiten und fehlenden Kontext geprüft. Browser-Test prüft übertragenen Seitenkontext, Fade-in-Dauer, ausgeschaltete Animation, Dauer 0, reduzierte Bewegung, Elementor-Adapter und das separate Schließen-Icon. Die tatsächliche Divi-Installation bleibt ein manueller Integrationstest.

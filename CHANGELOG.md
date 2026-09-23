@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9 — 2026-09-23
+
+- Seitenauswahl pro Popup: alle Seiten, Homepage, Archive/Beitragsübersicht, Blogbeiträge, WordPress-Seiten oder ausgewählte Einzelseiten.
+- Globale Fade-in-Option mit 0–5000 ms Dauer (Standard 300 ms), berücksichtigt reduzierte Bewegung.
+- Separates Schließen-Icon aus dem Nutzer-Commit beibehalten.
+
 ## 1.0.8 — 2026-09-23
 
 - Divi-Dialog mit maximal 640 px Breite, ohne Innenabstand und mit transparentem Hintergrund.

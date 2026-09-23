@@ -47,7 +47,9 @@ final class ZZZNM_Admin {
         $id = absint($input['template_id'] ?? 0);
         if ($id && (get_post_type($id) !== 'elementor_library' || get_post_status($id) !== 'publish'
             || get_post_meta($id, '_elementor_template_type', true) !== 'popup')) { $id = 0; }
-        return ['enabled' => empty($input['enabled']) ? 0 : 1,
+        return ['fade_enabled' => empty($input['fade_enabled']) ? 0 : 1,
+            'fade_duration' => max(0, min(5000, (int) ($input['fade_duration'] ?? 300))),
+            'enabled' => empty($input['enabled']) ? 0 : 1,
             'ticker_enabled' => empty($input['ticker_enabled']) ? 0 : 1,
             'ticker_controls' => empty($input['ticker_controls']) ? 0 : 1,
             'renderer' => $enum('renderer', ['standalone', 'elementor', 'divi'], 'standalone'),
@@ -89,6 +91,8 @@ final class ZZZNM_Admin {
         }
         $this->select('divi_template_id', 'Standard-Divi-Template (Tag: Popup)', $divi_templates, $settings);
 
+        echo '<tr><th>Einblendanimation</th><td><label><input type="checkbox" name="zzznm_settings[fade_enabled]" value="1" ' . checked($settings['fade_enabled'], 1, false) . '> Popup sanft einblenden (Fade-in)</label></td></tr>';
+        echo '<tr><th><label for="zzznm-fade-duration">Einblenddauer (ms)</label></th><td><input id="zzznm-fade-duration" name="zzznm_settings[fade_duration]" type="number" min="0" max="5000" step="1" value="' . esc_attr($settings['fade_duration']) . '"><p class="description">Standard: 300 ms. 0 = sofort anzeigen. Die Wartezeit vor dem Öffnen bleibt separat. Bei reduzierter Bewegung im Betriebssystem wird nicht animiert.</p></td></tr>';
         echo '<tr><th><label for="zzznm-delay">Verzögerung (Millisekunden)</label></th><td><input id="zzznm-delay" name="zzznm_settings[delay]" type="number" min="0" max="60000" step="100" value="' . esc_attr($settings['delay']) . '"></td></tr>';
         echo '<tr><th><label for="zzznm-complianz-delay">Verzögerung nach Complianz-Freigabe (ms)</label></th><td><input id="zzznm-complianz-delay" name="zzznm_settings[complianz_delay]" type="number" min="0" max="60000" step="1" value="' . esc_attr($settings['complianz_delay']) . '" aria-describedby="zzznm-complianz-delay-help"><p class="description" id="zzznm-complianz-delay-help">Wartezeit nach dem Schließen des Cookie-Banners. Standard: 300 ms. Die allgemeine Popup-Verzögerung kommt zusätzlich hinzu. 0 = keine zusätzliche Wartezeit.</p></td></tr></table>';
         echo '<p>Ohne verfügbares Elementor Pro oder gültiges Template wird das Standalone-Popup verwendet. In Elementor- und Divi-Templates die Shortcodes unten einsetzen. Divi: veröffentlichtes Layout aus der Divi-Bibliothek mit dem Tag „Popup“ auswählen. Die Option „Nach dem Schließen“ befindet sich im jeweiligen Popup-Beitrag. Automatische Elementor-Trigger für dieses Template deaktivieren: Die Zeitplanung übernimmt der Notice Manager.</p>';
@@ -135,6 +139,16 @@ final class ZZZNM_Admin {
             } else {
                 echo '<p>Bitte zuerst als Entwurf speichern, danach ist die Popup-Vorschau verfügbar.</p>';
             }
+            echo '<p><label for="zzznm-location"><strong>Auf welchen Seiten anzeigen?</strong></label><br><select id="zzznm-location" name="zzznm_location">';
+            foreach ($this->manager->locations() as $value => $label) {
+                echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->location_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
+            }
+            echo '</select></p><p><label for="zzznm-pages">Einzelseiten auswählen (nur bei „Nur ausgewählte Einzelseiten“)</label><br><input type="hidden" name="zzznm_pages_present" value="1"><select id="zzznm-pages" name="zzznm_pages[]" multiple size="7" style="min-width:280px;max-width:100%">';
+            $selected_pages = array_map('absint', (array) get_post_meta($post->ID, '_zzznm_pages', true));
+            foreach (get_pages(['post_status' => 'publish', 'sort_column' => 'post_title']) as $page) {
+                echo '<option value="' . (int) $page->ID . '" ' . selected(in_array((int) $page->ID, $selected_pages, true), true, false) . '>' . esc_html($page->post_title . ' (#' . $page->ID . ')') . '</option>';
+            }
+            echo '</select><br>Mehrere Seiten mit Strg/Cmd auswählen. Ohne Auswahl erscheint das Popup bei dieser Einstellung nirgends. Die Vorschau ignoriert diese Einschränkung.</p>';
             echo '<p><label for="zzznm-dismiss"><strong>Nach dem Schließen</strong></label><br><select id="zzznm-dismiss" name="zzznm_dismiss">';
             foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->dismiss_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
@@ -247,6 +261,21 @@ final class ZZZNM_Admin {
         }
         if ($post->post_type === ZZZNM_Manager::TICKER && isset($_POST['zzznm_ticker_title'])) {
             update_post_meta($id, '_zzznm_ticker_title', $this->input('zzznm_ticker_title'));
+        }
+        if ($post->post_type === ZZZNM_Manager::POPUP) {
+            if (isset($_POST['zzznm_location'])) {
+                $mode = $this->input('zzznm_location');
+                update_post_meta($id, '_zzznm_location', isset($this->manager->locations()[$mode]) ? $mode : 'all');
+            }
+            if (isset($_POST['zzznm_pages_present'])) {
+                $pages = [];
+                foreach ((array) ($_POST['zzznm_pages'] ?? []) as $page_id) {
+                    if (!is_scalar($page_id)) { continue; }
+                    $page_id = absint($page_id);
+                    if (get_post_type($page_id) === 'page' && get_post_status($page_id) === 'publish') { $pages[] = $page_id; }
+                }
+                update_post_meta($id, '_zzznm_pages', array_values(array_unique($pages)));
+            }
         }
         if ($post->post_type === ZZZNM_Manager::POPUP && isset($_POST['zzznm_dismiss'])) {
             $dismiss = $this->input('zzznm_dismiss');

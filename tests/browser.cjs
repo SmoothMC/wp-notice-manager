@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
   const context = await browser.newContext();
   const page = await context.newPage();
   page.on('pageerror', e => errors.push(e.message));
-  let data;
+  let data, lastRequest;
   const fresh = () => {
     const now = Math.floor(Date.now() / 1000);
     return { now, next: now + 60, template: 0,
@@ -19,6 +19,7 @@ const root = path.resolve(__dirname, '..');
   };
   await page.route('https://notices.test/**', async route => {
     if (route.request().url().endsWith('/ajax')) {
+      lastRequest = new URLSearchParams(route.request().postData());
       const now = Math.floor(Date.now() / 1000);
       await route.fulfill({ json: { success: true, data: { ...data, now, next: now + 60,
         popup: data.popup && data.popup.until > now ? data.popup : null } } });
@@ -30,7 +31,7 @@ const root = path.resolve(__dirname, '..');
     await page.goto('https://notices.test/');
     await page.addStyleTag({ path: path.join(root, 'assets/css/frontend.css') });
     await page.evaluate(({ elementor, adminPreview }) => {
-      window.ZZZNM = { endpoint: 'https://notices.test/ajax', close: 'Schließen', pause: 'Pause', play: 'Fortsetzen', next: 'Nächste Meldung' };
+      window.ZZZNM = { pageContext: { front: false, page: true, id: 42 }, endpoint: 'https://notices.test/ajax', close: 'Schließen', pause: 'Pause', play: 'Fortsetzen', next: 'Nächste Meldung' };
       if (adminPreview) {
         Object.assign(window.ZZZNM, { adminPreview: true, previewId: 12, previewNonce: 'test-nonce' });
         const banner = document.createElement('aside'); banner.innerHTML = '<button data-zzznm-preview-reopen>Erneut öffnen</button><span data-zzznm-preview-error></span>'; document.body.append(banner);
@@ -157,6 +158,20 @@ const root = path.resolve(__dirname, '..');
   await page.locator('[data-zzznm-preview-reopen]').click();
   await page.locator('dialog[open]').waitFor();
   assert.equal(await page.evaluate(() => localStorage.getItem('preview-key')), '1', 'Preview preserves visitor storage');
+  data = fresh(); data.popup.key = 'fade-test'; data.settings.fade_enabled = 1; data.settings.fade_duration = 1200;
+  await load(); await page.locator('dialog[open]').waitFor();
+  assert.equal(JSON.parse(lastRequest.get('page_context')).id, 42, 'Page context is sent to server');
+  assert.equal(await page.locator('dialog .zzznm-close-icon').textContent(), '×', 'User close-icon change retained');
+  assert.equal(await page.locator('dialog').evaluate(el => el.getAnimations()[0].effect.getTiming().duration), 1200);
+  await load({ reduced: true }); await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.locator('dialog').evaluate(el => el.getAnimations().length), 0, 'Reduced motion disables fade');
+  data.settings.fade_enabled = 0; await load(); await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.locator('dialog').evaluate(el => el.getAnimations().length), 0, 'Fade off');
+  data.settings.fade_enabled = 1; data.settings.fade_duration = 0; await load(); await page.locator('dialog[open]').waitFor();
+  assert.equal(await page.locator('dialog').evaluate(el => el.getAnimations().length), 0, 'Zero duration');
+  data.settings.fade_duration = 1200; data.template = 100;
+  await load({ elementor: true });
+  assert.equal(await page.locator('#elementor-popup-modal-100').evaluate(el => el.getAnimations()[0].effect.getTiming().duration), 1200, 'Elementor fade');
   assert.deepEqual(errors, []);
   await browser.close();
   console.log('PASS: standalone, Escape, persistent dismissal, changed content, rotation, marquee, reduced motion, empty ticker, expiry, Elementor adapter, fallback, mobile layout.');

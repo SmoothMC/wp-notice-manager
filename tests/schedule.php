@@ -172,4 +172,24 @@ $meta[$post->ID]['_zzznm_dismiss'] = 'forever';
 $key = $manager->popup_data($post)['key'];
 $meta[$post->ID]['_zzznm_button_url'] = 'https://example.org/changed';
 check($manager->popup_data($post)['key'] === $key, 'Button changes preserve forever dismissal');
+check($manager->matches_location(777, []), 'Existing popups default to all pages');
+foreach (['home' => 'front', 'archives' => 'archive', 'posts' => 'post', 'pages' => 'page'] as $mode => $flag) {
+    $meta[777]['_zzznm_location'] = $mode;
+    check($manager->matches_location(777, [$flag => true]), 'Correct page context: ' . $mode);
+    check(!$manager->matches_location(777, []), 'Missing context rejected: ' . $mode);
+    check(!$manager->matches_location(777, [$flag => false]), 'Different context rejected: ' . $mode);
+}
+$meta[777]['_zzznm_location'] = 'selected'; $meta[777]['_zzznm_pages'] = [42, 84];
+check($manager->matches_location(777, ['page' => true, 'id' => 42]), 'Selected page matches');
+check($manager->matches_location(777, ['page' => true, 'front' => true, 'id' => 84]), 'Selected static homepage matches');
+check(!$manager->matches_location(777, ['page' => true, 'id' => 21]), 'Unselected page rejected');
+check(!$manager->matches_location(777, ['post' => true, 'id' => 42]), 'Posts are not selected pages');
+check(!$manager->matches_location(777, ['page' => true, 'id' => []]), 'Malformed page context rejected');
+$meta[777]['_zzznm_pages'] = [];
+check(!$manager->matches_location(777, ['page' => true, 'id' => 42]), 'Empty selection displays nowhere');
+check($manager->settings()['fade_duration'] === 300, 'Default fade duration');
+check($admin->sanitize_settings(['fade_enabled' => 1, 'fade_duration' => 750])['fade_duration'] === 750, 'Custom fade duration');
+check($admin->sanitize_settings(['fade_duration' => -20])['fade_duration'] === 0, 'Negative fade clamped');
+check($admin->sanitize_settings(['fade_duration' => 99999])['fade_duration'] === 5000, 'Fade upper bound');
+check($admin->sanitize_settings([])['fade_enabled'] === 0, 'Fade can be disabled');
 echo "PASS: {$checks} checks; dates, DST, required fields, overlaps, boundaries, drafts, concurrent writes, active selection, dismissal keys; all PHP files parse.\n";

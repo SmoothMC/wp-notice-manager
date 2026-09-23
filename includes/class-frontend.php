@@ -64,6 +64,8 @@ final class ZZZNM_Frontend {
         wp_enqueue_style('zzznm', plugins_url('assets/css/frontend.css', ZZZNM_FILE), [], ZZZNM_VERSION);
         wp_enqueue_script('zzznm', plugins_url('assets/js/frontend.js', ZZZNM_FILE), [], ZZZNM_VERSION, true);
         wp_localize_script('zzznm', 'ZZZNM', ['endpoint' => admin_url('admin-ajax.php'),
+            'pageContext' => ['front' => is_front_page(), 'archive' => is_archive() || is_home(),
+                'post' => is_singular('post'), 'page' => is_page(), 'id' => get_queried_object_id()],
             'complianzDelay' => (int) $this->manager->settings()['complianz_delay'],
             'preview' => !$this->preview_id && (is_preview() || isset($_GET['elementor-preview']) || isset($_GET['et_fb'])),
             'adminPreview' => (bool) $this->preview_id, 'previewId' => $this->preview_id,
@@ -112,6 +114,11 @@ final class ZZZNM_Frontend {
         $settings = $this->manager->settings();
         $now = time();
         $popups = $settings['enabled'] ? $this->manager->active(ZZZNM_Manager::POPUP, $now) : [];
+        $context = isset($_POST['page_context']) && is_string($_POST['page_context'])
+            ? json_decode(wp_unslash($_POST['page_context']), true) : [];
+        $popups = array_values(array_filter($popups, function ($post) use ($context) {
+            return $this->manager->matches_location($post->ID, $context);
+        }));
         $tickers = [];
         foreach ($this->manager->active(ZZZNM_Manager::TICKER, $now) as $post) {
             $tickers[] = ['id' => $post->ID, 'title' => (string) get_post_meta($post->ID, '_zzznm_ticker_title', true), 'html' => $this->manager->body($post)];

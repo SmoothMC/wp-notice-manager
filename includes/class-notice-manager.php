@@ -34,7 +34,7 @@ final class ZZZNM_Manager {
     public function settings() {
         return wp_parse_args((array) get_option(self::OPTION, []), [
             'enabled' => 1, 'ticker_enabled' => 1, 'ticker_controls' => 1, 'renderer' => 'standalone', 'template_id' => 0, 'divi_template_id' => 0,
-            'delay' => 400, 'complianz_delay' => 300, 'ticker_mode' => 'rotate',
+            'fade_enabled' => 1, 'fade_duration' => 300, 'delay' => 400, 'complianz_delay' => 300, 'ticker_mode' => 'rotate',
             'interval' => 6, 'speed' => 45,
         ]);
     }
@@ -115,6 +115,29 @@ final class ZZZNM_Manager {
         return ['id' => $post->ID, 'button_text' => $button_text, 'button_url' => $button_url, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post),
             'columns' => max(1, min(6, (int) get_post_meta($post->ID, '_zzznm_columns', true))),
             'until' => $range['until'], 'key' => 'zzznm_closed_' . md5($key)];
+    }
+
+    public function locations() {
+        return ['all' => 'Alle Seiten', 'home' => 'Nur Homepage', 'archives' => 'Archive und Beitragsübersicht',
+            'posts' => 'Einzelne Blogbeiträge (alle Posts)', 'pages' => 'Alle WordPress-Seiten', 'selected' => 'Nur ausgewählte Einzelseiten'];
+    }
+
+    public function location_mode($id) {
+        $mode = get_post_meta($id, '_zzznm_location', true);
+        return isset($this->locations()[$mode]) ? $mode : 'all';
+    }
+
+    public function matches_location($id, $context) {
+        $mode = $this->location_mode($id);
+        if ($mode === 'all') { return true; }
+        if (!is_array($context)) { return false; }
+        if ($mode === 'selected') {
+            $pages = array_map('absint', (array) get_post_meta($id, '_zzznm_pages', true));
+            return ($context['page'] ?? false) === true && isset($context['id']) && is_scalar($context['id'])
+                && absint($context['id']) > 0 && in_array(absint($context['id']), $pages, true);
+        }
+        $key = ['home' => 'front', 'archives' => 'archive', 'posts' => 'post', 'pages' => 'page'][$mode];
+        return ($context[$key] ?? false) === true;
     }
 
     public function dismiss_mode($id) {

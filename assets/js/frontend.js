@@ -170,6 +170,18 @@
       else if (modal && api?.closePopup) api.closePopup({ id: old.template }, { target: modal });
     }
   }
+  function fadeIn(node) {
+    if (!node || !current || current.fadeNode === node) return;
+    current.fadeNode = node;
+    const settings = state.settings;
+    const duration = Math.max(0, Math.min(5000, Number(settings.fade_duration ?? 300)));
+    if (reduced.matches || settings.fade_enabled === 0 || settings.fade_enabled === '0' || !duration) return;
+    node.animate([{ opacity: 0 }, { opacity: 1 }], { duration, easing: 'ease-out' });
+    if (node.matches('dialog')) {
+      node.style.setProperty('--zzznm-fade-duration', duration + 'ms');
+      node.classList.add('zzznm-fade');
+    }
+  }
   function standalone(post) {
     updateComplianz();
     if (complianzHeld || !current || current.key !== post.key || now() >= post.until) return;
@@ -197,6 +209,7 @@
     });
     fillSlots();
     dialog.showModal();
+    fadeIn(dialog);
     if (layout) window.dispatchEvent(new Event('resize'));
     close.focus();
   }
@@ -214,6 +227,7 @@
         bindElementor();
         current.template = template;
         api.showPopup({ id: template });
+        fadeIn(document.getElementById(`elementor-popup-modal-${template}`));
         if (!current) return;
         fillSlots();
         // Some cached pages do not contain the selected template. Fall back once.
@@ -260,6 +274,7 @@
       if (Number(id) !== state?.template) return;
       updateComplianz();
       fillSlots();
+      if (!complianzHeld && current && !dialog) fadeIn(document.getElementById(`elementor-popup-modal-${id}`));
       // A late Elementor response must not overlap the standalone fallback.
       if (complianzHeld || dialog || !current || now() >= current.post.until) {
         document.getElementById(`elementor-popup-modal-${id}`)?.querySelector('.dialog-close-button, .dialog-lightbox-close-button')?.click();
@@ -414,7 +429,7 @@
         cache: 'no-store', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: config.adminPreview
           ? new URLSearchParams({ action: 'zzznm_preview_state', zzznm_preview: config.previewId, zzznm_nonce: config.previewNonce }).toString()
-          : 'action=zzznm_state', signal: controller.signal });
+          : new URLSearchParams({ action: 'zzznm_state', page_context: JSON.stringify(config.pageContext || {}) }).toString(), signal: controller.signal });
       if (!response.ok) throw new Error('Unable to load notices');
       const payload = await response.json();
       if (!payload.success) throw new Error('Invalid notice response');
