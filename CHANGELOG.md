@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 – 2026-10-25
+
+- Dashboard-Stil überarbeitet: weiße Kennzahlen-Kacheln auf sanft grünem Hintergrund, dezent hinterlegte Hinweiszeilen, Typ-Kennzeichnung und aufgeräumter Aktionsbereich.
+- Erklärungstext zur zeitlichen Freigabe aus dem Widget entfernt; responsive Darstellung für schmale Dashboard-Spalten.
+- Styles nur für das eigene Dashboard-Widget. Daten, Berechtigungen und Frontend-Darstellung bleiben unverändert.
+
 ## 1.2.0 – 2026-10-25
 
 - WordPress-Dashboard-Widget für aktive und nächste geplante Hinweise, Handlungsbedarf und Direktaktionen. Mit Popup-Priorität/Reihenfolge, Anzeigeort, Endzeit und „Endet heute“; ohne Funktionsstatus-Anzeige.

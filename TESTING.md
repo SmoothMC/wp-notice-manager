@@ -61,3 +61,8 @@ Auf der Zielseite mit einem echten Mitarbeiter-Konto prüfen: Liste, Anlegen/Bea
 ## 1.2.0 – Dashboard und Bezeichnung
 
 `php tests/dashboard.php` prüft aktive Reihenfolge, geplante Starts einschließlich WordPress-Veröffentlichung, exklusive Endzeit, unvollständige Entwürfe, fehlende/veraltete Seitenauswahl, Passwortschutz, Mitarbeiterrechte, deaktivierte Bereiche, HTML-Escaping, die Begrenzung auf fünf geplante Einträge, „Endet heute“, Vorschau-Nonce und rollenabhängige Direktaktionen. Der Release-Workflow führt diesen Test ebenfalls aus. Die Darstellung verwendet die WordPress-Dashboard-Standardstruktur; die echte Dashboard-Ansicht und Zielrollen bleiben auf der WordPress-Installation zu prüfen.
+
+
+## 1.2.1 – Dashboard-Gestaltung
+
+Dashboard-Vertragstests erfolgreich. Lokal gerendertes Widget-Markup mit beispielhaften Hinweisen in Chrome bei 620 und 360 Pixel Fensterbreite visuell geprüft; kein horizontaler Überlauf. Die lokale Vorschau verwendet einen vereinfachten WordPress-Rahmen und Ersatzsymbole, die Installation verwendet die WordPress-Dashicons. Keine Änderungen an der Frontend-Logik.

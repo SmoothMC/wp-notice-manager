@@ -1,0 +1,32 @@
+/* Scoped to this widget; WordPress keeps its own header and dashboard controls. */
+#zzznm_dashboard { border-radius: 8px; overflow: hidden; }
+#zzznm_dashboard .inside { margin: 0; padding: 0; }
+#zzznm_dashboard .zzznm-dashboard { color: #1d2327; }
+#zzznm_dashboard .zzznm-dashboard-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 18px; background: #eaf3ed; }
+#zzznm_dashboard .zzznm-dashboard-stat { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; padding: 16px 4px; background: #fff; border: 1px solid #e2e8e3; border-radius: 6px; text-align: center; }
+#zzznm_dashboard .zzznm-dashboard-stat .dashicons { color: #50575e; font-size: 22px; width: 24px; height: 24px; }
+#zzznm_dashboard .zzznm-dashboard-stat strong { font-size: 28px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+#zzznm_dashboard .zzznm-dashboard-stat > span:last-child { font-size: 12px; color: #50575e; }
+#zzznm_dashboard .zzznm-dashboard-section { border-bottom: 1px solid #e5e7e8; }
+#zzznm_dashboard .zzznm-dashboard-section h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; padding: 16px 18px 12px; font-size: 14px; font-weight: 600; }
+#zzznm_dashboard .zzznm-dashboard-count { color: #646970; font-size: 12px; font-weight: 400; }
+#zzznm_dashboard .zzznm-dashboard-list { margin: 0; padding: 0; list-style: none; }
+#zzznm_dashboard .zzznm-dashboard-list > li { margin: 0; padding: 14px 18px; background: #f6f7f7; }
+#zzznm_dashboard .zzznm-dashboard-list > li:nth-child(even) { background: #fff; }
+#zzznm_dashboard .zzznm-dashboard-entry-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+#zzznm_dashboard .zzznm-dashboard-entry-head strong { font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
+#zzznm_dashboard .zzznm-dashboard-type { flex-shrink: 0; border: 1px solid #dcdcde; border-radius: 4px; background: #fff; padding: 1px 6px; color: #50575e; font-size: 11px; line-height: 1.6; }
+#zzznm_dashboard .zzznm-dashboard-meta { color: #646970; font-size: 11px; margin-bottom: 5px; }
+#zzznm_dashboard .zzznm-dashboard-detail { color: #50575e; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+#zzznm_dashboard .zzznm-dashboard-actions { margin-top: 8px; font-size: 12px; }
+#zzznm_dashboard .zzznm-dashboard-empty { margin: 0; padding: 0 18px 16px; color: #646970; font-size: 12px; }
+#zzznm_dashboard .zzznm-dashboard-note { padding: 14px 18px; font-size: 11px; color: #646970; line-height: 1.6; }
+#zzznm_dashboard .zzznm-dashboard-note > span { display: block; margin-top: 6px; }
+#zzznm_dashboard .zzznm-dashboard-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 16px 18px; border-top: 1px solid #dcdcde; }
+#zzznm_dashboard .zzznm-dashboard-shortcut { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; }
+#zzznm_dashboard .zzznm-dashboard-settings { font-size: 12px; margin-left: auto; }
+#zzznm_dashboard a:focus-visible { outline: 2px solid #2271b1; outline-offset: 3px; }
+@media (max-width: 480px) {
+  #zzznm_dashboard .zzznm-dashboard-stats { padding: 12px; gap: 6px; }
+  #zzznm_dashboard .zzznm-dashboard-stat { padding: 12px 3px; }
+}

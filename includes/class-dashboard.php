@@ -7,6 +7,13 @@ final class ZZZNM_Dashboard {
     public function __construct($manager) {
         $this->manager = $manager;
         add_action('wp_dashboard_setup', [$this, 'register']);
+        add_action('admin_enqueue_scripts', [$this, 'assets']);
+    }
+
+    public function assets($hook) {
+        if ($hook === 'index.php' && current_user_can(ZZZNM_Manager::MANAGE_NOTICES)) {
+            wp_enqueue_style('zzznm-dashboard', plugins_url('assets/css/dashboard.css', ZZZNM_FILE), [], ZZZNM_VERSION);
+        }
     }
 
     public function register() {
@@ -82,8 +89,8 @@ final class ZZZNM_Dashboard {
     }
 
     private function section($label, $entries, $kind, $limit, $now) {
-        echo '<h3>' . esc_html($label . ' (' . count($entries) . ')') . '</h3>';
-        if (!$entries) { echo '<p class="description">Keine Einträge.</p>'; return; }
+        echo '<section class="zzznm-dashboard-section"><h3>' . esc_html($label) . ' <span class="zzznm-dashboard-count">(' . count($entries) . ')</span></h3>';
+        if (!$entries) { echo '<p class="zzznm-dashboard-empty">Keine Einträge.</p></section>'; return; }
         echo '<ul class="zzznm-dashboard-list">';
         $rank = 0;
         foreach (array_slice($entries, 0, $limit) as $entry) {
@@ -93,7 +100,7 @@ final class ZZZNM_Dashboard {
             $label = $popup ? 'Popup' : 'Ticker';
             if ($kind === 'active' && $popup) { $label .= ' · Reihenfolge ' . ++$rank; }
             if ($popup) { $label .= ' · Priorität ' . $this->manager->priority($post->ID); }
-            echo '<li><strong>' . esc_html($title) . '</strong><br><span class="description">' . esc_html($label) . '</span><br>';
+            echo '<li><div class="zzznm-dashboard-entry-head"><strong>' . esc_html($title) . '</strong><span class="zzznm-dashboard-type">' . ($popup ? 'Popup' : 'Ticker') . '</span></div><div class="zzznm-dashboard-meta">' . esc_html($label) . '</div><div class="zzznm-dashboard-detail">';
             echo esc_html($this->location($post)) . '<br>';
             if ($kind === 'issues') {
                 echo esc_html(implode(' ', $entry['issues'])) . '<br>';
@@ -105,33 +112,38 @@ final class ZZZNM_Dashboard {
                 }
                 echo '<br>';
             }
-            echo '<a href="' . esc_url(admin_url('post.php?post=' . $post->ID . '&action=edit')) . '">Bearbeiten</a>';
+            echo '</div><div class="zzznm-dashboard-actions"><a href="' . esc_url(admin_url('post.php?post=' . $post->ID . '&action=edit')) . '">Bearbeiten</a>';
             if ($popup) {
                 $url = add_query_arg(['zzznm_preview' => $post->ID, 'zzznm_nonce' => wp_create_nonce('zzznm_preview_' . $post->ID)], home_url('/'));
                 echo ' · <a href="' . esc_url($url) . '" target="_blank" rel="noopener">Popup-Vorschau</a>';
             }
-            echo '</li>';
+            echo '</div></li>';
         }
         echo '</ul>';
-        if (count($entries) > $limit) { echo '<p class="description">' . esc_html('Die ersten ' . $limit . ' Einträge werden angezeigt. Weitere findest du über die Listen unten.') . '</p>'; }
+        if (count($entries) > $limit) { echo '<p class="zzznm-dashboard-empty">' . esc_html('Die ersten ' . $limit . ' Einträge werden angezeigt. Weitere findest du über die Listen unten.') . '</p>'; }
+        echo '</section>';
     }
 
     public function render() {
         if (!current_user_can(ZZZNM_Manager::MANAGE_NOTICES)) { return; }
         $now = time(); $data = $this->data($now);
-        echo '<p class="description">Aktiv = zeitlich freigegeben. Die tatsächliche Anzeige hängt von Seitenauswahl, Complianz und der Schließentscheidung des Besuchers ab. Die Popup-Reihenfolge gilt für die auf der jeweiligen Seite passenden Hinweise.</p>';
+        echo '<div class="zzznm-dashboard"><div class="zzznm-dashboard-stats">';
+        foreach (['active' => ['Aktiv', 'megaphone'], 'planned' => ['Geplant', 'calendar-alt'], 'issues' => ['Zu prüfen', 'flag']] as $key => $stat) {
+            echo '<div class="zzznm-dashboard-stat"><span class="dashicons dashicons-' . esc_attr($stat[1]) . '" aria-hidden="true"></span><strong>' . count($data[$key]) . '</strong><span>' . esc_html($stat[0]) . '</span></div>';
+        }
+        echo '</div>';
         $this->section('Aktuell aktiv', $data['active'], 'active', 10, $now);
         $this->section('Als Nächstes geplant', $data['planned'], 'planned', 5, $now);
         $this->section('Handlungsbedarf', $data['issues'], 'issues', 5, $now);
-        echo '<p class="description">Zeitzone: ' . esc_html(wp_timezone_string()) . '</p><hr><p>';
+        echo '<div class="zzznm-dashboard-note"><span>Zeitzone: ' . esc_html(wp_timezone_string()) . '</span></div><div class="zzznm-dashboard-footer">';
         foreach ([ZZZNM_Manager::POPUP => ['Popup', 'Popups'], ZZZNM_Manager::TICKER => ['Ticker', 'Ticker']] as $type => $labels) {
             if (!$this->manager->is_enabled($type)) { continue; }
-            echo '<a class="button button-small" href="' . esc_url(admin_url('post-new.php?post_type=' . $type)) . '">' . esc_html($labels[0] . ' erstellen') . '</a> ';
-            echo '<a href="' . esc_url(admin_url('edit.php?post_type=' . $type)) . '">' . esc_html('Alle ' . $labels[1]) . '</a><br><br>';
+            echo '<div class="zzznm-dashboard-shortcut"><a class="button button-small" href="' . esc_url(admin_url('post-new.php?post_type=' . $type)) . '">' . esc_html($labels[0] . ' erstellen') . '</a> ';
+            echo '<a href="' . esc_url(admin_url('edit.php?post_type=' . $type)) . '">' . esc_html('Alle ' . $labels[1]) . '</a></div>';
         }
         if (current_user_can('manage_options')) {
-            echo '<a href="' . esc_url(admin_url('admin.php?page=zzznm')) . '">Einstellungen</a>';
+            echo '<a class="zzznm-dashboard-settings" href="' . esc_url(admin_url('admin.php?page=zzznm')) . '">Einstellungen</a>';
         }
-        echo '</p>';
+        echo '</div></div>';
     }
 }

@@ -16,6 +16,7 @@ function absint($value) { return abs((int) $value); }
 function wp_date($format, $time) { return (new DateTimeImmutable('@' . $time))->setTimezone(new DateTimeZone('Europe/Berlin'))->format($format); }
 function wp_timezone_string() { return 'Europe/Berlin'; }
 function esc_html($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
+function esc_attr($s) { return esc_html($s); }
 function esc_url($s) { return esc_html($s); }
 function admin_url($p) { return '/wp-admin/' . $p; }
 function home_url($p) { return 'https://notices.test' . $p; }
@@ -71,7 +72,7 @@ for ($i=21; $i<=27; $i++) { fixture($i, $now+($i*60), $now+86400); }
 ob_start(); $dashboard->render(); $html = ob_get_clean();
 check(strpos($html, '<script>') === false && strpos($html, '&lt;script&gt;') !== false, 'Titles escaped');
 check(strpos($html, 'Endet heute') !== false, 'Today label follows site timezone');
-check(strpos($html, 'Als Nächstes geplant (7)') !== false && strpos($html, 'Hinweis 26') === false, 'Only next five planned items shown with total');
+check(strpos(strip_tags($html), 'Als Nächstes geplant (7)') !== false && strpos($html, 'Hinweis 26') === false, 'Only next five planned items shown with total');
 check(strpos($html, 'zzznm_nonce=zzznm_preview_20') !== false, 'Preview link nonce bound to popup');
 check(strpos($html, '>Einstellungen<') === false, 'Employee has no settings link');
 check(strpos($html, 'Popup erstellen') !== false && strpos($html, 'Ticker erstellen') !== false, 'Creation shortcuts available');
@@ -79,4 +80,14 @@ check(strpos($html, 'Funktionsstatus') === false, 'No function status section');
 $caps['manage_options'] = true; ob_start(); $dashboard->render(); $html = ob_get_clean();
 check(strpos($html, '>Einstellungen<') !== false, 'Admin settings shortcut available');
 if (getenv('ZZZNM_DASHBOARD_HTML')) { file_put_contents(getenv('ZZZNM_DASHBOARD_HTML'), $html); }
+if (in_array('--render', $argv, true)) {
+    $posts = []; $meta = [];
+    fixture(30, $now-100, $end)->post_title = 'Geänderte Sprechzeiten';
+    $meta[30]['_zzznm_priority'] = 80; $meta[30]['_zzznm_location'] = 'home';
+    fixture(31, 0, 0, ZZZNM_Manager::TICKER)->post_title = 'Neue Telefonnummer';
+    fixture(32, $now+86400, $now+172800)->post_title = 'Praxisurlaub im November';
+    fixture(33, 0, 0, ZZZNM_Manager::POPUP, 'draft')->post_title = 'Hinweis zur Grippeschutzimpfung';
+    ob_start(); $dashboard->render(); $preview = ob_get_clean();
+    file_put_contents('/plugin/build/dashboard-preview-fragment.html', $preview);
+}
 echo "PASS: {$checks} dashboard checks.\n";

@@ -1,4 +1,4 @@
-# WP Notice Manager · 1.2.0
+# WP Notice Manager · 1.2.1
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.2.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.2.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -177,3 +177,5 @@ Das Widget **WP Notice Manager** ist für berechtigte Hinweis-Verwalter einschli
 Jeder Bereich zeigt die Gesamtzahl. Es werden nur aktivierte Beitragstypen und individuell bearbeitbare Einträge berücksichtigt. Es gibt keine Funktionsstatus-Anzeige. „Aktiv“ beschreibt die zeitliche Freigabe, nicht die tatsächliche Anzeige bei jedem Besucher. Seitenauswahl, Complianz und Schließentscheidungen bleiben maßgeblich. Zeitangaben und „Endet heute“ verwenden die WordPress-Zeitzone. Die Übersicht wird beim Laden des Dashboards neu berechnet; es werden keine Besucherstatistiken erfasst.
 
 Der sichtbare Pluginname lautet **WP Notice Manager**, der Autor **Mikka | zzzooo Studio**. Technischer Ordner, Shortcodes, gespeicherte Inhalte und Update-Zuordnung bleiben unverändert.
+
+Ab 1.2.1 zeigt das Dashboard drei Kennzahlen-Kacheln auf dezent grünem Hintergrund, abwechselnd hinterlegte Hinweiszeilen und einen gemeinsamen Aktionsbereich. Das Stylesheet wird nur im Dashboard für berechtigte Benutzer geladen und ist auf dieses Widget begrenzt.
