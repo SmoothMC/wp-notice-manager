@@ -1,4 +1,4 @@
-# WP Notice Manager · 1.2.1
+# WP Notice Manager · 1.2.2
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.2.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.2.2`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -179,3 +179,8 @@ Jeder Bereich zeigt die Gesamtzahl. Es werden nur aktivierte Beitragstypen und i
 Der sichtbare Pluginname lautet **WP Notice Manager**, der Autor **Mikka | zzzooo Studio**. Technischer Ordner, Shortcodes, gespeicherte Inhalte und Update-Zuordnung bleiben unverändert.
 
 Ab 1.2.1 zeigt das Dashboard drei Kennzahlen-Kacheln auf dezent grünem Hintergrund, abwechselnd hinterlegte Hinweiszeilen und einen gemeinsamen Aktionsbereich. Das Stylesheet wird nur im Dashboard für berechtigte Benutzer geladen und ist auf dieses Widget begrenzt.
+
+
+### Cookiefreie Tab-Sitzung (ab 1.2.2)
+
+Pro Popup steht unter **Nach dem Schließen** zusätzlich **Für diese Tab-Sitzung ausblenden** zur Verfügung. Die Entscheidung wird ausschließlich in `sessionStorage` gespeichert, ohne Cookie und ohne dauerhaften lokalen Schließzustand. Neuladen und Seitenwechsel innerhalb derselben Origin im selben Tab behalten sie bei. Neue unabhängige Tabs können den Hinweis erneut zeigen; duplizierte/über einen Öffner gestartete oder wiederhergestellte Tabs können den Zustand übernehmen. Das Schließen des Tabs beendet die Sitzung normalerweise, Browser-Sitzungswiederherstellung kann sie erhalten. Bei blockiertem Speicher gilt das Ausblenden nur auf der aktuell geladenen Seite. Die Regel gilt pro Popup und bleibt bei Inhaltsänderungen innerhalb derselben Tab-Sitzung bestehen. Vorschau und Complianz-Unterbrechungen speichern keine Schließentscheidung.

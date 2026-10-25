@@ -196,10 +196,10 @@ final class ZZZNM_Admin {
             }
             echo '</select><br>Mehrere Seiten mit Strg/Cmd auswählen. Ohne Auswahl erscheint das Popup bei dieser Einstellung nirgends. Die Vorschau ignoriert diese Einschränkung.</p>';
             echo '<p><label for="zzznm-dismiss"><strong>Nach dem Schließen</strong></label><br><select id="zzznm-dismiss" name="zzznm_dismiss">';
-            foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
+            foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'session' => 'Für diese Tab-Sitzung ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->dismiss_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
             }
-            echo '</select></p>';
+            echo '</select></p><p class="description">Tab-Sitzung: ohne Cookie, gilt nach Neuladen und beim Seitenwechsel im selben Tab. Neue Tabs sind unabhängig; duplizierte oder wiederhergestellte Tabs können die Entscheidung übernehmen.</p>';
             echo '<p><label for="zzznm-button-text"><strong>Button-Text</strong></label><br><input class="regular-text" id="zzznm-button-text" name="zzznm_button_text" type="text" value="' . esc_attr(get_post_meta($post->ID, '_zzznm_button_text', true)) . '" placeholder="Weitere Informationen"></p>';
             echo '<p><label for="zzznm-button-url"><strong>Button-Link</strong></label><br><input class="large-text" id="zzznm-button-url" name="zzznm_button_url" type="text" value="' . esc_attr(get_post_meta($post->ID, '_zzznm_button_url', true)) . '" placeholder="https://example.de/weitere-informationen"><br>Optional. Der vollständige Button erscheint nur, wenn Text und Link vorhanden sind. Möglich sind https://, http://, mailto:, tel: oder interne Pfade.</p>';
             echo '<p>Im Template: <code>[notice_popup_button]</code> in ein Textmodul einfügen. Für ein eigenes Divi-Button- oder Bildmodul als normalen Link <code>#notice-popup-link</code> verwenden. Optional übernimmt die CSS-Klasse <code>zzznm-popup-button</code> am Button-Modul auch den Button-Text.</p>';
@@ -298,7 +298,7 @@ final class ZZZNM_Admin {
         }
         if ($post->post_type === ZZZNM_Manager::POPUP && isset($_POST['zzznm_dismiss'])) {
             $dismiss = $this->input('zzznm_dismiss');
-            update_post_meta($id, '_zzznm_dismiss', in_array($dismiss, ['content', 'date', 'forever', 'always'], true) ? $dismiss : 'content');
+            update_post_meta($id, '_zzznm_dismiss', in_array($dismiss, ['content', 'date', 'forever', 'session', 'always'], true) ? $dismiss : 'content');
         }
         if ($post->post_type === ZZZNM_Manager::POPUP) {
             if (isset($_POST['zzznm_button_text'])) { update_post_meta($id, '_zzznm_button_text', $this->input('zzznm_button_text')); }

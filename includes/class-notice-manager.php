@@ -166,7 +166,7 @@ final class ZZZNM_Manager {
 
     public function dismiss_mode($id) {
         $mode = get_post_meta($id, '_zzznm_dismiss', true);
-        return in_array($mode, ['content', 'date', 'forever', 'always'], true) ? $mode : 'content';
+        return in_array($mode, ['content', 'date', 'forever', 'session', 'always'], true) ? $mode : 'content';
     }
 
     public function valid_divi_template($id) {

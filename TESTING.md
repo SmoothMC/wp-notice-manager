@@ -66,3 +66,8 @@ Auf der Zielseite mit einem echten Mitarbeiter-Konto prüfen: Liste, Anlegen/Bea
 ## 1.2.1 – Dashboard-Gestaltung
 
 Dashboard-Vertragstests erfolgreich. Lokal gerendertes Widget-Markup mit beispielhaften Hinweisen in Chrome bei 620 und 360 Pixel Fensterbreite visuell geprüft; kein horizontaler Überlauf. Die lokale Vorschau verwendet einen vereinfachten WordPress-Rahmen und Ersatzsymbole, die Installation verwendet die WordPress-Dashicons. Keine Änderungen an der Frontend-Logik.
+
+
+## 1.2.2 – Cookiefreie Sitzungsregel
+
+PHP-Prüfungen für Erkennen, Speichern und stabilen Sitzungsschlüssel. `node tests/session.cjs` prüft in Chrome: keine Cookies, Neuladen und Navigation im selben Tab, unabhängige/neue Tabs, Isolation gegenüber dauerhaftem localStorage-Schließzustand und blockierten sessionStorage.

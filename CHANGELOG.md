@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 – 2026-10-25
+
+- Neue Schließregel pro Popup: „Für diese Tab-Sitzung ausblenden“ mit sessionStorage, ohne Cookie.
+- Ausblenden bleibt bei Neuladen/Seitenwechsel im selben Tab erhalten. Andere Tabs sind unabhängig; Browser können Sitzungen wiederherstellen oder kopieren.
+- Bestehende Schließregeln, Vorschau und Warteschlange bleiben erhalten. Bei blockiertem Speicher verhindert der Seitenzustand weiterhin Wiederholungsschleifen.
+
 ## 1.2.1 – 2026-10-25
 
 - Dashboard-Stil überarbeitet: weiße Kennzahlen-Kacheln auf sanft grünem Hintergrund, dezent hinterlegte Hinweiszeilen, Typ-Kennzeichnung und aufgeräumter Aktionsbereich.

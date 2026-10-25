@@ -65,8 +65,18 @@
   }
   const now = () => (Date.now() + serverOffset) / 1000;
   const storage = {
-    has(key) { try { return localStorage.getItem(key) === '1'; } catch (_) { return false; } },
-    set(key) { try { localStorage.setItem(key, '1'); } catch (_) { /* Private browsing: session only. */ } }
+    has(post) {
+      try {
+        const target = post.dismiss === 'session' ? sessionStorage : localStorage;
+        return target.getItem(post.key) === '1';
+      } catch (_) { return false; }
+    },
+    set(post) {
+      try {
+        const target = post.dismiss === 'session' ? sessionStorage : localStorage;
+        target.setItem(post.key, '1');
+      } catch (_) { /* Storage blocked: the in-memory seen set prevents repeats on this page. */ }
+    }
   };
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -150,7 +160,7 @@
   }
   function remember(post) {
     seen.add(post.key);
-    if (!config.adminPreview && (post.dismiss || 'content') !== 'always') storage.set(post.key);
+    if (!config.adminPreview && (post.dismiss || 'content') !== 'always') storage.set(post);
   }
   function closeCurrent() {
     clearTimeout(showTimer);
@@ -252,7 +262,7 @@
   }
   function syncPopup() {
     const eligible = state.popups.filter(post => now() < post.until && !seen.has(post.key)
-      && (config.adminPreview || (post.dismiss || 'content') === 'always' || !storage.has(post.key)));
+      && (config.adminPreview || (post.dismiss || 'content') === 'always' || !storage.has(post)));
     // Preserve an open popup while it remains eligible; priority applies to the next opening.
     const post = eligible.find(post => post.key === current?.key) || eligible[0] || null;
     state.popup = post;

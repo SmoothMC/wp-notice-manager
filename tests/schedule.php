@@ -214,4 +214,12 @@ check(array_column($state_data['popups'], 'id') === [12, 11], 'Endpoint filters 
 check($state_data['popup']['id'] === 12, 'Legacy popup field remains compatible');
 $options[ZZZNM_Manager::OPTION] = ['enabled' => 0]; $frontend->state();
 check($state_data['popups'] === [] && $state_data['popup'] === null, 'Disabled popup clears full queue');
+$meta[12]['_zzznm_dismiss'] = 'session';
+check($manager->dismiss_mode(12) === 'session', 'Session mode accepted');
+$key = $manager->popup_data($posts[12])['key'];
+$posts[12]->post_content = 'Changed in same session';
+check($manager->popup_data($posts[12])['key'] === $key, 'Session dismissal remains tied to popup identity');
+$_POST = ['zzznm_nonce' => 'zzznm_save_12', 'zzznm_dismiss' => 'session'];
+$admin->save(12, $posts[12]);
+check($meta[12]['_zzznm_dismiss'] === 'session', 'Session mode saved');
 echo "PASS: {$checks} checks; dates, DST, required fields, overlaps, boundaries, drafts, priority queue selection, dismissal keys; all PHP files parse.\n";
