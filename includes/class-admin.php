@@ -39,7 +39,7 @@ final class ZZZNM_Admin {
     public function menu() {
         $admin = current_user_can('manage_options');
         if (!$admin && !$this->content_links()) { return; }
-        add_menu_page('WP Notice Manager by ZZZOOO', 'Notice Manager', $admin ? 'manage_options' : ZZZNM_Manager::MANAGE_NOTICES,
+        add_menu_page('WP Notice Manager', 'Notice Manager', $admin ? 'manage_options' : ZZZNM_Manager::MANAGE_NOTICES,
             'zzznm', [$this, 'overview_page'], 'dashicons-megaphone', 26);
         if ($admin) {
             add_submenu_page('zzznm', 'Einstellungen', 'Einstellungen', 'manage_options', 'zzznm', [$this, 'overview_page']);
@@ -113,7 +113,7 @@ final class ZZZNM_Admin {
         $settings = $this->manager->settings();
         $renderers = $this->manager->renderers();
         if (!isset($renderers[$settings['renderer']])) { $settings['renderer'] = 'standalone'; }
-        echo '<div class="wrap"><h1>Notice Manager <small>by ZZZOOO</small></h1>';
+        echo '<div class="wrap"><h1>WP Notice Manager</h1>';
         settings_errors();
         echo '<p>Aktiviere die benötigten Bereiche. Deaktivierte Bereiche werden auf der Website und in der Verwaltung ausgeblendet. Gespeicherte Beiträge bleiben erhalten.</p><form action="options.php" method="post">';
         settings_fields('zzznm');

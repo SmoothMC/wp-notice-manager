@@ -72,7 +72,7 @@ final class ZZZNM_Updater {
         $data = $this->metadata();
         if (!$data) { return $result; }
         return (object) ['name' => sanitize_text_field($data['name']), 'slug' => self::SLUG,
-            'version' => $data['version'], 'author' => '<a href="https://zzzooo.studio/">ZZZOOO Studio</a>',
+            'version' => $data['version'], 'author' => '<a href="https://zzzooo.studio/">Mikka | zzzooo Studio</a>',
             'homepage' => self::REPOSITORY, 'download_link' => $data['download_url'],
             'requires' => $data['requires'], 'requires_php' => $data['requires_php'],
             'tested' => $data['tested'], 'last_updated' => sanitize_text_field($data['last_updated']),

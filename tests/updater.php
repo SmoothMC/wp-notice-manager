@@ -60,6 +60,7 @@ check($requests === 1 && $ttl === 3600, 'Successful metadata cached for one hour
 check($request[0] === ZZZNM_Updater::METADATA && $request[1]['timeout'] === 10, 'Fixed endpoint with timeout');
 $updater->metadata(); check($requests === 1, 'Cache reused');
 $info = $updater->information(false, 'plugin_information', (object) ['slug' => ZZZNM_Updater::SLUG]);
+check(strpos($info->author, 'Mikka | zzzooo Studio') !== false, 'Correct author spelling in plugin details');
 check($info->version === '1.0.4' && $info->download_link === $manifest['download_url'], 'Details dialog uses release');
 check($updater->information('preserve', 'query_plugins', (object) []) === 'preserve', 'Unrelated API calls preserved');
 $updater->metadata(true); check($requests === 2, 'Manual check bypasses cache');

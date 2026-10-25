@@ -56,3 +56,8 @@ Seitenauswahl isoliert für Homepage, Archive, Posts, Seiten, ausgewählte Seite
 `php tests/admin.php none` sowie Varianten `divi`, `elementor`, `both` prüfen 140 Verträge: gezielte Rollenerweiterung, keine zusätzlichen globalen Rechte, geschützte Einstellungen, aktivierungsabhängige Topbar, sichtbare Builder-Optionen und Template-Felder, Erhalt verborgener Template-IDs und Plugin-Aktionslink. `tests/preview.php` prüft nun auch Mitarbeiter-Vorschauen ohne Einstellungsrechte. Der Release-Workflow führt alle vier Builder-Varianten aus.
 
 Auf der Zielseite mit einem echten Mitarbeiter-Konto prüfen: Liste, Anlegen/Bearbeiten/Veröffentlichen, Vorschau und Topbar; Einstellungen dürfen nicht zugänglich sein. Die automatisierten Prüfungen verwenden WordPress-Testdoubles und ersetzen keinen vollständigen WordPress-/Divi-Integrationstest.
+
+
+## 1.2.0 – Dashboard und Bezeichnung
+
+`php tests/dashboard.php` prüft aktive Reihenfolge, geplante Starts einschließlich WordPress-Veröffentlichung, exklusive Endzeit, unvollständige Entwürfe, fehlende/veraltete Seitenauswahl, Passwortschutz, Mitarbeiterrechte, deaktivierte Bereiche, HTML-Escaping, die Begrenzung auf fünf geplante Einträge, „Endet heute“, Vorschau-Nonce und rollenabhängige Direktaktionen. Der Release-Workflow führt diesen Test ebenfalls aus. Die Darstellung verwendet die WordPress-Dashboard-Standardstruktur; die echte Dashboard-Ansicht und Zielrollen bleiben auf der WordPress-Installation zu prüfen.

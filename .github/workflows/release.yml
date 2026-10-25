@@ -30,6 +30,7 @@ jobs:
           php tests/schedule.php
           php tests/updater.php
           php tests/preview.php
+          php tests/dashboard.php
           for builder in none divi elementor both; do php tests/admin.php "$builder"; done
           node --check assets/js/frontend.js
       - name: Build ZIP and metadata

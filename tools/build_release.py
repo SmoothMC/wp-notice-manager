@@ -34,7 +34,7 @@ def build(version, destination):
         assert all(name.startswith(SLUG + "/") for name in archive.namelist())
     changelog = (ROOT / "CHANGELOG.md").read_text()
     metadata = {
-        "name": "WP Notice Manager by ZZZOOO", "slug": SLUG, "version": version,
+        "name": "WP Notice Manager", "slug": SLUG, "version": version,
         "url": REPOSITORY,
         "download_url": f"{REPOSITORY}/releases/download/v{version}/{package.name}",
         "requires": "6.0", "requires_php": "7.4", "tested": "",

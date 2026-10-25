@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 – 2026-10-25
+
+- WordPress-Dashboard-Widget für aktive und nächste geplante Hinweise, Handlungsbedarf und Direktaktionen. Mit Popup-Priorität/Reihenfolge, Anzeigeort, Endzeit und „Endet heute“; ohne Funktionsstatus-Anzeige.
+- Mitarbeiter sehen nur ihre Verwaltungsaktionen; Einstellungen bleiben Administratoren vorbehalten. Vorschau-Links sind weiterhin geschützt.
+- Übersicht berücksichtigt aktivierte Bereiche, Bearbeitungsrechte, exklusive Endzeiten, WordPress-Zeitzone und geplante Veröffentlichung.
+- Sichtbarer Pluginname auf „WP Notice Manager“ gekürzt; Autor auf „Mikka | zzzooo Studio“ korrigiert, auch in den Plugin-Updateinformationen. Technische Plugin-Identität bleibt unverändert.
+
 ## 1.1.1 – 2026-10-25
 
 - Admin-Topbar: Megafon-Icon und Untermenüs für aktivierte Popups/Ticker sowie Einstellungen entsprechend der Berechtigung.

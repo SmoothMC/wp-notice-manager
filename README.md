@@ -1,4 +1,4 @@
-# WP Notice Manager by ZZZOOO · 1.1.1
+# WP Notice Manager · 1.2.0
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -7,7 +7,7 @@ GitHub-Projekt: [SmoothMC/wp-notice-manager](https://github.com/SmoothMC/wp-noti
 ## Installation
 
 1. Den Ordner `notice-manager-by-zzzooo` nach `wp-content/plugins/` kopieren oder die ZIP-Datei über WordPress installieren.
-2. „Praxis Popup Hinweis“ deaktivieren und „WP Notice Manager by ZZZOOO“ aktivieren. Solange das alte Plugin aktiv ist, startet der neue Manager nicht, um doppelte Popup-Steuerung und Shortcode-Konflikte zu vermeiden.
+2. „Praxis Popup Hinweis“ deaktivieren und „WP Notice Manager“ aktivieren. Solange das alte Plugin aktiv ist, startet der neue Manager nicht, um doppelte Popup-Steuerung und Shortcode-Konflikte zu vermeiden.
 3. Unter **Notice Manager → Einstellungen** die Darstellung wählen.
 4. Optional den gespeicherten Praxis-Hinweis mit **Als Entwurf übernehmen** importieren. Der Import kopiert Inhalt, Spalten und gültige Datumswerte; er verändert weder die alten Daten noch die neuen globalen Einstellungen. Fehlende Pflichtdaten vor der Veröffentlichung ergänzen.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.1.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.2.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -163,3 +163,17 @@ Die WordPress-Standardrollen **Administrator** und **Mitarbeiter** können Popup
 Die Admin-Topbar zeigt **Website-Hinweise** mit Megafon-Icon. Darunter stehen **Popups** und/oder **Ticker**, sofern der jeweilige Bereich aktiviert ist. **Einstellungen** sehen nur berechtigte Administratoren. Sind beide Bereiche deaktiviert, entfällt der Eintrag für Mitarbeiter; Administratoren behalten den Einstellungszugang. Der Plugin-Link **Einstellungen** ersetzt **Nach Updates suchen**. Updates werden weiterhin über die reguläre WordPress-Aktualisierungsseite geprüft.
 
 In den Einstellungen werden nur nutzbare Builder angeboten: Divi bei aktivem Divi-Renderer (Theme einschließlich Child-Theme oder Builder-Plugin), Elementor bei aktivem Elementor Pro mit Popup-Modul. Ohne diese Builder bleiben die zugehörigen Auswahloptionen und Template-Felder verborgen. Standalone ist immer verfügbar. Beim Speichern ohne einen Builder wird dessen bisherige Template-ID erhalten, die Darstellung fällt auf Standalone zurück. Nach erneuter Aktivierung kann die Builder-Darstellung wieder ausgewählt werden.
+
+
+### WordPress-Dashboard (ab 1.2.0)
+
+Das Widget **WP Notice Manager** ist für berechtigte Hinweis-Verwalter einschließlich Mitarbeiter sichtbar:
+
+- **Aktuell aktiv:** bis zu zehn zeitlich freigegebene Hinweise, Popups nach Priorität und ID, Ticker nach Reihenfolge. Anzeigeort, Endzeit und gegebenenfalls „Endet heute“ werden angezeigt.
+- **Als Nächstes geplant:** die nächsten fünf freigegebenen Hinweise nach Startzeit. Eine spätere geplante WordPress-Veröffentlichung wird berücksichtigt; vollständige Entwürfe zählen nicht als geplanter Start.
+- **Handlungsbedarf:** bis zu fünf Einträge mit fehlenden/ungültigen Pflichtdaten, leerer oder nicht mehr veröffentlichter Seitenauswahl, Passwortschutz oder unpassender/überfälliger WordPress-Veröffentlichung.
+- **Direktaktionen:** Bearbeiten, geschützte Popup-Vorschau, Popup/Ticker erstellen und die jeweiligen Beitragslisten. Einstellungen nur für Administratoren.
+
+Jeder Bereich zeigt die Gesamtzahl. Es werden nur aktivierte Beitragstypen und individuell bearbeitbare Einträge berücksichtigt. Es gibt keine Funktionsstatus-Anzeige. „Aktiv“ beschreibt die zeitliche Freigabe, nicht die tatsächliche Anzeige bei jedem Besucher. Seitenauswahl, Complianz und Schließentscheidungen bleiben maßgeblich. Zeitangaben und „Endet heute“ verwenden die WordPress-Zeitzone. Die Übersicht wird beim Laden des Dashboards neu berechnet; es werden keine Besucherstatistiken erfasst.
+
+Der sichtbare Pluginname lautet **WP Notice Manager**, der Autor **Mikka | zzzooo Studio**. Technischer Ordner, Shortcodes, gespeicherte Inhalte und Update-Zuordnung bleiben unverändert.
