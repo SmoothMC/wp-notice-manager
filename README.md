@@ -27,7 +27,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 
 1. Version im PHP-Header und in `ZZZNM_VERSION` erhöhen, README und CHANGELOG aktualisieren; Tests ausführen und committen.
 2. Die Versionsänderung in der Hauptdatei nach `main` pushen (startet den Release-Workflow automatisch), einen passenden Tag `vX.Y.Z` pushen oder unter **Actions → Build and publish release → Run workflow** die Version eingeben.
-3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
+3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten. Die Release-Beschreibung wird ausschließlich aus dem passenden Versionsabschnitt des Changelogs erzeugt.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
 Lokal bauen: `python3 tools/build_release.py 1.2.2`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
@@ -184,3 +184,10 @@ Ab 1.2.1 zeigt das Dashboard drei Kennzahlen-Kacheln auf dezent grünem Hintergr
 ### Cookiefreie Tab-Sitzung (ab 1.2.2)
 
 Pro Popup steht unter **Nach dem Schließen** zusätzlich **Für diese Tab-Sitzung ausblenden** zur Verfügung. Die Entscheidung wird ausschließlich in `sessionStorage` gespeichert, ohne Cookie und ohne dauerhaften lokalen Schließzustand. Neuladen und Seitenwechsel innerhalb derselben Origin im selben Tab behalten sie bei. Neue unabhängige Tabs können den Hinweis erneut zeigen; duplizierte/über einen Öffner gestartete oder wiederhergestellte Tabs können den Zustand übernehmen. Das Schließen des Tabs beendet die Sitzung normalerweise, Browser-Sitzungswiederherstellung kann sie erhalten. Bei blockiertem Speicher gilt das Ausblenden nur auf der aktuell geladenen Seite. Die Regel gilt pro Popup und bleibt bei Inhaltsänderungen innerhalb derselben Tab-Sitzung bestehen. Vorschau und Complianz-Unterbrechungen speichern keine Schließentscheidung.
+
+
+### Changelog und Release-Beschreibungen
+
+`CHANGELOG.md` enthält die vollständige Historie, neueste Version zuerst, mit Überschriften `## X.Y.Z – YYYY-MM-DD` (Europe/Berlin). Jede Version verwendet nur die zutreffenden Kategorien **New**, **Fix**, **Change**, **Remove**; leere Kategorien entfallen.
+
+GitHub-Releases enthalten ausschließlich den jeweiligen Versionsabschnitt. `tools/release_notes.py` prüft und extrahiert diesen Abschnitt; fehlende oder doppelte Versionen führen zum Abbruch. Änderungen am Changelog auf main synchronisieren auch die Beschreibungen bestehender veröffentlichter Releases. Dabei wird nur der Beschreibungstext geändert, keine Tags, Pakete, Veröffentlichungsdaten oder Latest-Markierungen. Die vollständige Historie bleibt im Repository und in künftig gebauten Plugin-Paketen erhalten. Bereits veröffentlichte ZIP-Dateien werden nicht nachträglich verändert.

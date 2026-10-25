@@ -71,3 +71,8 @@ Dashboard-Vertragstests erfolgreich. Lokal gerendertes Widget-Markup mit beispie
 ## 1.2.2 – Cookiefreie Sitzungsregel
 
 PHP-Prüfungen für Erkennen, Speichern und stabilen Sitzungsschlüssel. `node tests/session.cjs` prüft in Chrome: keine Cookies, Neuladen und Navigation im selben Tab, unabhängige/neue Tabs, Isolation gegenüber dauerhaftem localStorage-Schließzustand und blockierten sessionStorage.
+
+
+## Release-Notizen
+
+`python3 tests/release_notes.py` prüft die Isolation aller Versionsabschnitte, ungültige/fehlende/doppelte Versionen sowie die Beschränkung der GitHub-Synchronisierung auf das Body-Feld. Entwürfe werden übersprungen, unveränderte Beschreibungen nicht erneut geschrieben.

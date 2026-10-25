@@ -1,0 +1,27 @@
+name: Synchronize release notes
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'CHANGELOG.md'
+      - 'tools/release_notes.py'
+      - 'tests/release_notes.py'
+      - '.github/workflows/release-notes.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: notice-manager-release
+  cancel-in-progress: false
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate version extraction
+        run: python3 tests/release_notes.py
+      - name: Update published release descriptions only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 tools/release_notes.py --sync-repository "$GH_REPO"
