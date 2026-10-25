@@ -81,9 +81,8 @@ final class ZZZNM_Updater {
     }
 
     public function links($links) {
-        if (current_user_can('update_plugins')) {
-            $url = wp_nonce_url(admin_url('admin-post.php?action=zzznm_check_updates'), 'zzznm_check_updates');
-            $links[] = '<a href="' . esc_url($url) . '">Nach Updates suchen</a>';
+        if (current_user_can('manage_options')) {
+            $links[] = '<a href="' . esc_url(admin_url('admin.php?page=zzznm')) . '">Einstellungen</a>';
         }
         return $links;
     }

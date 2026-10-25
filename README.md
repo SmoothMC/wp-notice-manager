@@ -1,4 +1,4 @@
-# WP Notice Manager by ZZZOOO · 1.1.0
+# WP Notice Manager by ZZZOOO · 1.1.1
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -19,7 +19,7 @@ Das installierbare Paket heißt `wp-notice-manager-X.Y.Z.zip` und liegt unter [G
 
 Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.1.0 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
 
-Ab 1.1.0 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
+Ab 1.1.0 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Dashboard → Aktualisierungen → Erneut prüfen** prüft bei Bedarf sofort. Der Plugin-Aktionslink führt zu den Einstellungen. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
 
 Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/SmoothMC/wp-notice-manager/releases/latest/download/update.json), das ZIP aus demselben versionierten GitHub-Release. Dafür werden keine GitHub-Tokens in WordPress benötigt. Jede reguläre WordPress-Update-Prüfung lädt frische Metadaten, wie bei woo-cart-gifts. Nur der Detaildialog verwendet einen Cache (eine Stunde, bei Fehlern fünf Minuten). „Erneut prüfen“ unter Dashboard → Aktualisierungen leert diesen Cache ebenfalls. Automatische Updates folgen weiterhin der WordPress-Einstellung. Das Repository und die Releases müssen öffentlich erreichbar bleiben.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.1.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.1.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -147,10 +147,19 @@ Bei fehlendem Button-Text oder Link bleibt der vollständige Button verborgen. H
 
 ### Popup-Vorschau
 
-Im Popup-Beitrag zuerst speichern, dann **Popup-Vorschau öffnen** anklicken. Die Vorschau öffnet die Startseite in einem neuen Tab und zeigt nur das gewählte Popup mit dem zentralen Template. Sie ist per Administrator-Berechtigung und zeitlich begrenztem Sicherheitslink geschützt. Zeitraum, Schließregel und Complianz-Sperre werden nur in der Vorschau ignoriert; sie veröffentlicht keinen Entwurf und verändert keine gespeicherten Besucherentscheidungen. Nach dem Schließen lässt sich das Popup über **Erneut öffnen** nochmals ansehen. Ungespeicherte Änderungen werden nicht gezeigt. Cache-Plugins müssen wie üblich eingeloggte Administratoren und Vorschau-URLs vom Seiten-Cache ausschließen.
+Im Popup-Beitrag zuerst speichern, dann **Popup-Vorschau öffnen** anklicken. Die Vorschau öffnet die Startseite in einem neuen Tab und zeigt nur das gewählte Popup mit dem zentralen Template. Sie ist durch Hinweis-Verwaltungsrechte, Bearbeitungsrechte am Beitrag und einen zeitlich begrenzten Sicherheitslink geschützt. Zeitraum, Schließregel und Complianz-Sperre werden nur in der Vorschau ignoriert; sie veröffentlicht keinen Entwurf und verändert keine gespeicherten Besucherentscheidungen. Nach dem Schließen lässt sich das Popup über **Erneut öffnen** nochmals ansehen. Ungespeicherte Änderungen werden nicht gezeigt. Cache-Plugins müssen wie üblich eingeloggte Hinweis-Verwalter und Vorschau-URLs vom Seiten-Cache ausschließen.
 
 ### Seitenauswahl und Fade-in
 
 Im jeweiligen Popup unter **Auf welchen Seiten anzeigen?** wählen: alle Seiten (Standard), nur Homepage, Archive und Beitragsübersicht, einzelne Blogbeiträge, alle WordPress-Seiten oder ausgewählte Einzelseiten. Mehrere konkrete Seiten mit Strg/Cmd auswählen. Eine leere Auswahl zeigt nichts an. „Homepage“ folgt der in WordPress konfigurierten Startseite; „Archive“ enthält auch die Beitragsübersicht, „Posts“ meint einzelne Beiträge vom Typ Beitrag. Die geschützte Vorschau ignoriert die Seiteneinschränkung. Überschneidende Zeiträume werden über die Popup-Priorität und Warteschlange gesteuert. Nach Änderungen an der WordPress-Startseite den Seiten-Cache leeren.
 
 Unter den globalen Popup-Einstellungen kann **Popup sanft einblenden (Fade-in)** abgeschaltet und die Dauer von 0 bis 5000 ms angepasst werden. Standard ist 300 ms. Die Startverzögerung bleibt unabhängig. Standalone und Divi blenden auch den Hintergrund ein; Elementor erhält eine zusätzliche Transparenzanimation. Für ein einheitliches Ergebnis zusätzliche Elementor-Eingangsanimationen im Template ausschalten. Bei reduzierter Bewegung wird nicht animiert.
+
+
+### Verwaltung und Rollen (ab 1.1.1)
+
+Die WordPress-Standardrollen **Administrator** und **Mitarbeiter** können Popup- und Ticker-Beiträge anlegen, bearbeiten, veröffentlichen, löschen und in der Vorschau prüfen. Dafür vergibt das Plugin ausschließlich die eigene Berechtigung `zzznm_manage_notices`; allgemeine Veröffentlichungs- oder Einstellungsrechte werden nicht erweitert. Andere Rollen bleiben unverändert. Globale Einstellungen, Builder-Templates, Funktionsschalter und der Altbestand-Import bleiben durch `manage_options` geschützt.
+
+Die Admin-Topbar zeigt **Website-Hinweise** mit Megafon-Icon. Darunter stehen **Popups** und/oder **Ticker**, sofern der jeweilige Bereich aktiviert ist. **Einstellungen** sehen nur berechtigte Administratoren. Sind beide Bereiche deaktiviert, entfällt der Eintrag für Mitarbeiter; Administratoren behalten den Einstellungszugang. Der Plugin-Link **Einstellungen** ersetzt **Nach Updates suchen**. Updates werden weiterhin über die reguläre WordPress-Aktualisierungsseite geprüft.
+
+In den Einstellungen werden nur nutzbare Builder angeboten: Divi bei aktivem Divi-Renderer (Theme einschließlich Child-Theme oder Builder-Plugin), Elementor bei aktivem Elementor Pro mit Popup-Modul. Ohne diese Builder bleiben die zugehörigen Auswahloptionen und Template-Felder verborgen. Standalone ist immer verfügbar. Beim Speichern ohne einen Builder wird dessen bisherige Template-ID erhalten, die Darstellung fällt auf Standalone zurück. Nach erneuter Aktivierung kann die Builder-Darstellung wieder ausgewählt werden.

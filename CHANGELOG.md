@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 – 2026-10-25
+
+- Admin-Topbar: Megafon-Icon und Untermenüs für aktivierte Popups/Ticker sowie Einstellungen entsprechend der Berechtigung.
+- Standardrolle Mitarbeiter darf Hinweis-Beiträge inklusive Veröffentlichung und geschützter Vorschau verwalten. Globale Einstellungen bleiben Administratoren vorbehalten; eigene Plugin-Berechtigung ohne zusätzliche allgemeine WordPress-Rechte.
+- Divi- und Elementor-Pro-Auswahl und Template-Felder erscheinen nur bei verfügbarem Renderer. Verborgene Template-Zuordnungen bleiben erhalten.
+- Plugin-Aktionslink „Einstellungen“ ersetzt „Nach Updates suchen“. Native WordPress-Update-Prüfungen bleiben unverändert.
+
 ## 1.1.0 – 2026-10-25
 
 - Native WordPress-Update-Prüfungen laden wie bei woo-cart-gifts stets frische Metadaten. „Erneut prüfen“ leert den Detail-Cache. GitHub bleibt die tokenfreie Updatequelle; automatische Updates bleiben eine WordPress-Benutzerentscheidung.

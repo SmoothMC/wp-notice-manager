@@ -27,7 +27,7 @@ final class ZZZNM_Frontend {
     public function authorized_preview($input) {
         $id = isset($input['zzznm_preview']) && is_scalar($input['zzznm_preview']) ? absint($input['zzznm_preview']) : 0;
         $nonce = isset($input['zzznm_nonce']) && is_string($input['zzznm_nonce']) ? sanitize_text_field(wp_unslash($input['zzznm_nonce'])) : '';
-        if (!$id || !current_user_can('manage_options') || !current_user_can('edit_post', $id)
+        if (!$id || !current_user_can(ZZZNM_Manager::MANAGE_NOTICES) || !current_user_can('edit_post', $id)
             || !wp_verify_nonce($nonce, 'zzznm_preview_' . $id)) { return 0; }
         $post = get_post($id);
         return $post && $post->post_type === ZZZNM_Manager::POPUP

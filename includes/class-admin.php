@@ -25,14 +25,49 @@ final class ZZZNM_Admin {
         add_filter('post_row_actions', [$this, 'row_actions'], 10, 2);
     }
 
+    private function content_links() {
+        $links = [];
+        if (!current_user_can(ZZZNM_Manager::MANAGE_NOTICES)) { return $links; }
+        foreach ([ZZZNM_Manager::POPUP => 'Popups', ZZZNM_Manager::TICKER => 'Ticker'] as $type => $label) {
+            if ($this->manager->is_enabled($type)) {
+                $links[$type] = ['title' => $label, 'href' => admin_url('edit.php?post_type=' . $type)];
+            }
+        }
+        return $links;
+    }
+
     public function menu() {
-        add_menu_page('WP Notice Manager by ZZZOOO', 'Notice Manager', 'manage_options', 'zzznm', [$this, 'settings_page'], 'dashicons-megaphone', 26);
-        add_submenu_page('zzznm', 'Einstellungen', 'Einstellungen', 'manage_options', 'zzznm', [$this, 'settings_page']);
+        $admin = current_user_can('manage_options');
+        if (!$admin && !$this->content_links()) { return; }
+        add_menu_page('WP Notice Manager by ZZZOOO', 'Notice Manager', $admin ? 'manage_options' : ZZZNM_Manager::MANAGE_NOTICES,
+            'zzznm', [$this, 'overview_page'], 'dashicons-megaphone', 26);
+        if ($admin) {
+            add_submenu_page('zzznm', 'Einstellungen', 'Einstellungen', 'manage_options', 'zzznm', [$this, 'overview_page']);
+        }
+    }
+
+    public function overview_page() {
+        if (current_user_can('manage_options')) { $this->settings_page(); return; }
+        if (!current_user_can(ZZZNM_Manager::MANAGE_NOTICES)) { return; }
+        echo '<div class="wrap"><h1>Website-Hinweise</h1><p>Popups und Ticker verwalten:</p><ul>';
+        foreach ($this->content_links() as $link) {
+            echo '<li><a href="' . esc_url($link['href']) . '">' . esc_html($link['title']) . '</a></li>';
+        }
+        echo '</ul></div>';
     }
 
     public function admin_bar($bar) {
+        $links = $this->content_links();
         if (current_user_can('manage_options')) {
-            $bar->add_node(['id' => 'zzznm', 'title' => 'Website-Hinweise', 'href' => admin_url('admin.php?page=zzznm')]);
+            $links['settings'] = ['title' => 'Einstellungen', 'href' => admin_url('admin.php?page=zzznm')];
+        }
+        if (!$links) { return; }
+        $first = reset($links);
+        $bar->add_node(['id' => 'zzznm',
+            'title' => '<span class="ab-icon dashicons dashicons-megaphone" aria-hidden="true"></span><span class="ab-label">Website-Hinweise</span>',
+            'href' => $links['settings']['href'] ?? $first['href']]);
+        foreach ($links as $id => $link) {
+            $bar->add_node(['id' => 'zzznm-' . $id, 'parent' => 'zzznm', 'title' => $link['title'], 'href' => $link['href']]);
         }
     }
 
@@ -45,6 +80,8 @@ final class ZZZNM_Admin {
         $enum = static function ($key, $allowed, $default) use ($input) {
             return isset($input[$key]) && in_array($input[$key], $allowed, true) ? $input[$key] : $default;
         };
+        $available = $this->manager->renderers();
+        $existing = $this->manager->settings();
         $id = absint($input['template_id'] ?? 0);
         if ($id && (get_post_type($id) !== 'elementor_library' || get_post_status($id) !== 'publish'
             || get_post_meta($id, '_elementor_template_type', true) !== 'popup')) { $id = 0; }
@@ -53,10 +90,11 @@ final class ZZZNM_Admin {
             'enabled' => empty($input['enabled']) ? 0 : 1,
             'ticker_enabled' => empty($input['ticker_enabled']) ? 0 : 1,
             'ticker_controls' => empty($input['ticker_controls']) ? 0 : 1,
-            'renderer' => $enum('renderer', ['standalone', 'elementor', 'divi'], 'standalone'),
-            'template_id' => $id, 'delay' => min(60000, absint($input['delay'] ?? 400)),
+            'renderer' => $enum('renderer', array_keys($available), 'standalone'),
+            'template_id' => isset($available['elementor']) ? $id : (int) $existing['template_id'], 'delay' => min(60000, absint($input['delay'] ?? 400)),
             'complianz_delay' => max(0, min(60000, (int) ($input['complianz_delay'] ?? 300))),
-            'divi_template_id' => $this->manager->valid_divi_template(absint($input['divi_template_id'] ?? 0)) ? absint($input['divi_template_id']) : 0,
+            'divi_template_id' => !isset($available['divi']) ? (int) $existing['divi_template_id']
+                : ($this->manager->valid_divi_template(absint($input['divi_template_id'] ?? 0)) ? absint($input['divi_template_id']) : 0),
             'ticker_mode' => $enum('ticker_mode', ['rotate', 'marquee'], 'rotate'),
             'interval' => max(2, min(60, absint($input['interval'] ?? 6))),
             'speed' => max(10, min(200, absint($input['speed'] ?? 45)))];
@@ -73,24 +111,30 @@ final class ZZZNM_Admin {
     public function settings_page() {
         if (!current_user_can('manage_options')) { return; }
         $settings = $this->manager->settings();
-        $templates = [0 => 'Kein Template – Standalone verwenden'];
-        foreach (get_posts(['post_type' => 'elementor_library', 'post_status' => 'publish', 'numberposts' => -1,
-            'meta_key' => '_elementor_template_type', 'meta_value' => 'popup']) as $post) {
-            $templates[$post->ID] = $post->post_title . ' (#' . $post->ID . ')';
-        }
+        $renderers = $this->manager->renderers();
+        if (!isset($renderers[$settings['renderer']])) { $settings['renderer'] = 'standalone'; }
         echo '<div class="wrap"><h1>Notice Manager <small>by ZZZOOO</small></h1>';
         settings_errors();
         echo '<p>Aktiviere die benötigten Bereiche. Deaktivierte Bereiche werden auf der Website und in der Verwaltung ausgeblendet. Gespeicherte Beiträge bleiben erhalten.</p><form action="options.php" method="post">';
         settings_fields('zzznm');
         echo '<h2>Popups</h2><table class="form-table"><tr><th>Popup-Funktion</th><td><label><input type="checkbox" name="zzznm_settings[enabled]" value="1" ' . checked($settings['enabled'], 1, false) . '> Popups aktivieren (inklusive Posttyp)</label></td></tr>';
-        $this->select('renderer', 'Darstellung', ['standalone' => 'Standalone (ohne Page Builder)', 'elementor' => 'Elementor Pro', 'divi' => 'Divi-Bibliothek'], $settings);
-        $this->select('template_id', 'Standard-Elementor-Template', $templates, $settings);
-        $divi_templates = [0 => 'Kein Template – Standalone verwenden'];
-        foreach (get_posts(['post_type' => 'et_pb_layout', 'post_status' => 'publish', 'numberposts' => -1,
-            'tax_query' => [['taxonomy' => 'layout_tag', 'field' => 'slug', 'terms' => ['popup']]]]) as $layout) {
-            $divi_templates[$layout->ID] = $layout->post_title . ' (#' . $layout->ID . ')';
+        $this->select('renderer', 'Darstellung', $renderers, $settings);
+        if (isset($renderers['elementor'])) {
+            $templates = [0 => 'Kein Template – Standalone verwenden'];
+            foreach (get_posts(['post_type' => 'elementor_library', 'post_status' => 'publish', 'numberposts' => -1,
+                'meta_key' => '_elementor_template_type', 'meta_value' => 'popup']) as $post) {
+                $templates[$post->ID] = $post->post_title . ' (#' . $post->ID . ')';
+            }
+            $this->select('template_id', 'Standard-Elementor-Template', $templates, $settings);
         }
-        $this->select('divi_template_id', 'Standard-Divi-Template (Tag: Popup)', $divi_templates, $settings);
+        if (isset($renderers['divi'])) {
+            $templates = [0 => 'Kein Template – Standalone verwenden'];
+            foreach (get_posts(['post_type' => 'et_pb_layout', 'post_status' => 'publish', 'numberposts' => -1,
+                'tax_query' => [['taxonomy' => 'layout_tag', 'field' => 'slug', 'terms' => ['popup']]]]) as $layout) {
+                $templates[$layout->ID] = $layout->post_title . ' (#' . $layout->ID . ')';
+            }
+            $this->select('divi_template_id', 'Standard-Divi-Template (Tag: Popup)', $templates, $settings);
+        }
 
         echo '<tr><th>Einblendanimation</th><td><label><input type="checkbox" name="zzznm_settings[fade_enabled]" value="1" ' . checked($settings['fade_enabled'], 1, false) . '> Popup sanft einblenden (Fade-in)</label></td></tr>';
         echo '<tr><th><label for="zzznm-fade-duration">Einblenddauer (ms)</label></th><td><input id="zzznm-fade-duration" name="zzznm_settings[fade_duration]" type="number" min="0" max="5000" step="1" value="' . esc_attr($settings['fade_duration']) . '"><p class="description">Standard: 300 ms. 0 = sofort anzeigen. Die Wartezeit vor dem Öffnen bleibt separat. Bei reduzierter Bewegung im Betriebssystem wird nicht animiert.</p></td></tr>';
@@ -137,7 +181,7 @@ final class ZZZNM_Admin {
             echo '<p><label for="zzznm-priority"><strong>Priorität</strong></label><br><input id="zzznm-priority" name="zzznm_priority" type="number" min="0" max="999" step="1" value="' . (int) $this->manager->priority($post->ID) . '"><br>0–999, Standard: 0. Höhere Zahlen erscheinen zuerst. Nach dem Schließen folgt das nächste passende Popup; jedes Popup höchstens einmal pro Seitenaufruf.</p>';
             if ($post->post_status !== 'auto-draft') {
                 $preview_url = add_query_arg(['zzznm_preview' => $post->ID, 'zzznm_nonce' => wp_create_nonce('zzznm_preview_' . $post->ID)], home_url('/'));
-                echo '<p><a class="button button-secondary" href="' . esc_url($preview_url) . '" target="_blank" rel="noopener">Popup-Vorschau öffnen</a></p><p class="description">Zeigt den zuletzt gespeicherten Inhalt mit dem ausgewählten Template. Änderungen bitte zuerst speichern. Nur für Administratoren; Zeitraum, Schließregel und Complianz-Sperre werden in dieser Vorschau ignoriert.</p>';
+                echo '<p><a class="button button-secondary" href="' . esc_url($preview_url) . '" target="_blank" rel="noopener">Popup-Vorschau öffnen</a></p><p class="description">Zeigt den zuletzt gespeicherten Inhalt mit dem ausgewählten Template. Änderungen bitte zuerst speichern. Nur für berechtigte Hinweis-Verwalter; Zeitraum, Schließregel und Complianz-Sperre werden in dieser Vorschau ignoriert.</p>';
             } else {
                 echo '<p>Bitte zuerst als Entwurf speichern, danach ist die Popup-Vorschau verfügbar.</p>';
             }
@@ -264,7 +308,7 @@ final class ZZZNM_Admin {
     }
 
     public function notices() {
-        if (!current_user_can('manage_options')) { return; }
+        if (!current_user_can('manage_options') && !current_user_can(ZZZNM_Manager::MANAGE_NOTICES)) { return; }
         $key = 'zzznm_error_' . get_current_user_id();
         if ($message = get_transient($key)) {
             echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';

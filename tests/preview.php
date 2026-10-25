@@ -13,7 +13,7 @@ require dirname(__DIR__) . '/includes/class-notice-manager.php';
 require dirname(__DIR__) . '/includes/class-frontend.php';
 $frontend = new ZZZNM_Frontend(new ZZZNM_Manager());
 $posts[12] = (object) ['post_type' => ZZZNM_Manager::POPUP, 'post_status' => 'draft'];
-$caps = ['manage_options' => true, 'edit_post' => true];
+$caps = [ZZZNM_Manager::MANAGE_NOTICES => true, 'edit_post' => true];
 $input = ['zzznm_preview' => 12, 'zzznm_nonce' => 'zzznm_preview_12'];
 $checks = 0;
 function verify($expected, $input) {
@@ -21,13 +21,14 @@ function verify($expected, $input) {
     if ($GLOBALS['frontend']->authorized_preview($input) !== $expected) { throw new RuntimeException('Preview authorization failed'); }
 }
 verify(12, $input);
+$caps['manage_options'] = false; verify(12, $input); // Contributor preview does not need global settings access.
 verify(0, []);
 verify(0, ['zzznm_preview' => 12]);
 verify(0, ['zzznm_preview' => 12, 'zzznm_nonce' => 'wrong']);
 verify(0, ['zzznm_preview' => [12], 'zzznm_nonce' => ['bad']]);
 verify(0, ['zzznm_preview' => 13, 'zzznm_nonce' => 'zzznm_preview_12']);
-$caps['manage_options'] = false; verify(0, $input);
-$caps['manage_options'] = true; $caps['edit_post'] = false; verify(0, $input);
+$caps[ZZZNM_Manager::MANAGE_NOTICES] = false; verify(0, $input);
+$caps[ZZZNM_Manager::MANAGE_NOTICES] = true; $caps['edit_post'] = false; verify(0, $input);
 $caps['edit_post'] = true;
 foreach (['trash', 'auto-draft', 'inherit'] as $status) { $posts[12]->post_status = $status; verify(0, $input); }
 $posts[12]->post_status = 'publish'; $posts[12]->post_type = 'page'; verify(0, $input);

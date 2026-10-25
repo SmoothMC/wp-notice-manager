@@ -5,9 +5,33 @@ final class ZZZNM_Manager {
     const OPTION = 'zzznm_settings';
     const POPUP = 'zzznm_popup';
     const TICKER = 'zzznm_ticker';
+    const MANAGE_NOTICES = 'zzznm_manage_notices';
 
     public function __construct() {
+        add_action('init', [$this, 'register_permissions'], 5);
         add_action('init', [$this, 'register_types']);
+    }
+
+    public function register_permissions() {
+        // Runs on upgrades as well as first activation, independently for each site.
+        if (get_option('zzznm_permissions_version') === '1') { return; }
+        foreach (['administrator', 'contributor'] as $name) {
+            $role = get_role($name);
+            if ($role) { $role->add_cap(self::MANAGE_NOTICES); }
+        }
+        update_option('zzznm_permissions_version', '1', false);
+    }
+
+    public function renderers() {
+        $choices = ['standalone' => 'Standalone (ohne Page Builder)'];
+        if (class_exists('ElementorPro\\Modules\\Popup\\Module')) {
+            $choices['elementor'] = 'Elementor Pro';
+        }
+        if (function_exists('et_builder_render_layout') || (class_exists('WP_Block_Type_Registry')
+            && WP_Block_Type_Registry::get_instance()->is_registered('divi/global-layout'))) {
+            $choices['divi'] = 'Divi-Bibliothek';
+        }
+        return $choices;
     }
 
     public function register_types() {
@@ -21,12 +45,12 @@ final class ZZZNM_Manager {
                 'public' => false, 'show_ui' => true, 'show_in_menu' => 'zzznm',
                 'show_in_rest' => false, 'rewrite' => false, 'query_var' => false,
                 'supports' => ['title', 'editor'], 'map_meta_cap' => true,
-                'capabilities' => ['create_posts' => 'manage_options', 'edit_posts' => 'manage_options',
-                    'edit_others_posts' => 'manage_options', 'publish_posts' => 'manage_options',
-                    'read_private_posts' => 'manage_options', 'delete_posts' => 'manage_options',
-                    'delete_private_posts' => 'manage_options', 'delete_published_posts' => 'manage_options',
-                    'delete_others_posts' => 'manage_options', 'edit_private_posts' => 'manage_options',
-                    'edit_published_posts' => 'manage_options'],
+                'capabilities' => ['create_posts' => self::MANAGE_NOTICES, 'edit_posts' => self::MANAGE_NOTICES,
+                    'edit_others_posts' => self::MANAGE_NOTICES, 'publish_posts' => self::MANAGE_NOTICES,
+                    'read_private_posts' => self::MANAGE_NOTICES, 'delete_posts' => self::MANAGE_NOTICES,
+                    'delete_private_posts' => self::MANAGE_NOTICES, 'delete_published_posts' => self::MANAGE_NOTICES,
+                    'delete_others_posts' => self::MANAGE_NOTICES, 'edit_private_posts' => self::MANAGE_NOTICES,
+                    'edit_published_posts' => self::MANAGE_NOTICES],
             ]);
         }
     }

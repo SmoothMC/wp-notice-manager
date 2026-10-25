@@ -49,3 +49,10 @@ Seitenauswahl isoliert für Homepage, Archive, Posts, Seiten, ausgewählte Seite
 - `node tests/queue.cjs`: Standalone-, Divi- und Elementor-Testadapter; automatische Folge, keine Verdrängung, entfernte/abgelaufene Hinweise, gespeicherte Schließregeln, Divi-Links, Complianz-Unterbrechung und verspätetes Elementor-Hide.
 - Bestehende `tests/browser.cjs`, `tests/complianz.cjs` und `tests/preview.php` bleiben Regressionstests.
 - Browser-Tests verwenden Playwright mit separatem Chrome-Profil und nachgebildeten Builder-APIs. Abschließend auf der Zielinstallation mit echtem Divi 4 / Elementor Pro und Cache-Plugin prüfen.
+
+
+## 1.1.1 – Admin-Menüs, Mitarbeiter und Builder-Auswahl
+
+`php tests/admin.php none` sowie Varianten `divi`, `elementor`, `both` prüfen 140 Verträge: gezielte Rollenerweiterung, keine zusätzlichen globalen Rechte, geschützte Einstellungen, aktivierungsabhängige Topbar, sichtbare Builder-Optionen und Template-Felder, Erhalt verborgener Template-IDs und Plugin-Aktionslink. `tests/preview.php` prüft nun auch Mitarbeiter-Vorschauen ohne Einstellungsrechte. Der Release-Workflow führt alle vier Builder-Varianten aus.
+
+Auf der Zielseite mit einem echten Mitarbeiter-Konto prüfen: Liste, Anlegen/Bearbeiten/Veröffentlichen, Vorschau und Topbar; Einstellungen dürfen nicht zugänglich sein. Die automatisierten Prüfungen verwenden WordPress-Testdoubles und ersetzen keinen vollständigen WordPress-/Divi-Integrationstest.
