@@ -14,11 +14,12 @@ function wp_parse_args($args, $defaults) { return array_merge($defaults, $args);
 function get_post_meta($id, $key, $single) { return $GLOBALS['meta'][$id][$key] ?? ''; }
 function update_post_meta($id, $key, $value) { $GLOBALS['meta'][$id][$key] = $value; }
 function get_posts($args) {
-    return array_values(array_filter($GLOBALS['posts'], static function ($p) use ($args) {
+    $found = array_values(array_filter($GLOBALS['posts'], static function ($p) use ($args) {
         return in_array($p->post_type, (array) $args['post_type'], true)
             && in_array($p->post_status, (array) $args['post_status'], true)
             && !in_array($p->ID, $args['exclude'] ?? [], true);
     }));
+    return ($args['fields'] ?? '') === 'ids' ? array_column($found, 'ID') : $found;
 }
 function wp_verify_nonce($nonce, $action) { return $nonce === $action; }
 function sanitize_text_field($value) { return trim(strip_tags($value)); }
@@ -107,16 +108,16 @@ check($manager->validate(ZZZNM_Manager::POPUP, 0, 200, 100) !== '', 'Reverse ran
 fixture(1, 100, 200);
 check($manager->validate(ZZZNM_Manager::POPUP, 2, 200, 300) === '', 'Adjacent ranges allowed');
 check($manager->validate(ZZZNM_Manager::POPUP, 2, 50, 100) === '', 'Adjacent preceding range allowed');
-check($manager->validate(ZZZNM_Manager::POPUP, 2, 150, 250) !== '', 'Partial overlap rejected');
-check($manager->validate(ZZZNM_Manager::POPUP, 2, 50, 250) !== '', 'Enclosing overlap rejected');
-check($manager->validate(ZZZNM_Manager::POPUP, 2, 120, 180) !== '', 'Contained overlap rejected');
+check($manager->validate(ZZZNM_Manager::POPUP, 2, 150, 250) === '', 'Partial overlap allowed');
+check($manager->validate(ZZZNM_Manager::POPUP, 2, 50, 250) === '', 'Enclosing overlap allowed');
+check($manager->validate(ZZZNM_Manager::POPUP, 2, 120, 180) === '', 'Contained overlap allowed');
 check($manager->validate(ZZZNM_Manager::POPUP, 1, 100, 200) === '', 'Editing same post allowed');
 fixture(2, 300, 400, ZZZNM_Manager::POPUP, 'draft');
 check($manager->validate(ZZZNM_Manager::POPUP, 3, 300, 400) === '', 'Drafts do not reserve time');
 check(count($manager->active(ZZZNM_Manager::POPUP, 100)) === 1, 'Start inclusive');
 check(count($manager->active(ZZZNM_Manager::POPUP, 200)) === 0, 'End exclusive');
-fixture(3, 100, 200); // Corrupt external data must still never yield two popups.
-check(count($manager->active(ZZZNM_Manager::POPUP, 150)) === 1, 'Only one active popup');
+fixture(3, 100, 200); // All matching popups form a queue.
+check(count($manager->active(ZZZNM_Manager::POPUP, 150)) === 2, 'Both active popups returned');
 $posts[1]->post_password = 'secret'; $posts[3]->post_password = 'secret';
 check(count($manager->active(ZZZNM_Manager::POPUP, 150)) === 0, 'Password protected content excluded');
 fixture(4, 0, 0, ZZZNM_Manager::TICKER);
@@ -134,10 +135,8 @@ $_POST['zzznm_until'] = '2026-09-22T13:00';
 check($admin->validate_post($data, ['ID' => 2])['post_status'] === 'publish', 'Valid publication allowed');
 $admin->save(2, $posts[2]);
 check($meta[2]['_zzznm_until'] === $parse('2026-09-22T13:00'), 'Dates saved as timestamps');
-$admin->unlock(); $wpdb->available = false;
-check($admin->validate_post($data, ['ID' => 2])['post_status'] === 'draft', 'Concurrent publication fails closed');
-$wpdb->available = true; $_POST = [];
-check($admin->validate_post($data, ['ID' => 9, 'meta_input' => ['_zzznm_from' => 100, '_zzznm_until' => 200]])['post_status'] === 'draft', 'Programmatic meta_input overlap rejected');
+$_POST = [];
+check($admin->validate_post($data, ['ID' => 9, 'meta_input' => ['_zzznm_from' => 100, '_zzznm_until' => 200]])['post_status'] === 'publish', 'Programmatic overlapping schedules allowed');
 $post = fixture(7, 500, 600);
 $key = $manager->popup_data($post)['key']; $post->post_content = 'Neu';
 check($manager->popup_data($post)['key'] !== $key, 'Content changes reset dismissal');
@@ -149,7 +148,6 @@ $key = $manager->popup_data($post)['key']; $post->post_content = 'Noch einmal';
 check($manager->popup_data($post)['key'] === $key, 'Date dismissal ignores content changes');
 $meta[7]['_zzznm_until'] = 650;
 check($manager->popup_data($post)['key'] !== $key, 'Date changes reset date dismissal');
-$admin->unlock();
 $frontend = new ZZZNM_Frontend($manager);
 $frontend->complianz_config();
 check(strpos($GLOBALS['inline'], '= false;') !== false, 'No banner script means no forced wait');
@@ -192,4 +190,28 @@ check($admin->sanitize_settings(['fade_enabled' => 1, 'fade_duration' => 750])['
 check($admin->sanitize_settings(['fade_duration' => -20])['fade_duration'] === 0, 'Negative fade clamped');
 check($admin->sanitize_settings(['fade_duration' => 99999])['fade_duration'] === 5000, 'Fade upper bound');
 check($admin->sanitize_settings([])['fade_enabled'] === 0, 'Fade can be disabled');
-echo "PASS: {$checks} checks; dates, DST, required fields, overlaps, boundaries, drafts, concurrent writes, active selection, dismissal keys; all PHP files parse.\n";
+$posts = []; $meta = [];
+fixture(9, 100, 200); fixture(2, 100, 200); fixture(8, 100, 200);
+$meta[8]['_zzznm_priority'] = 20;
+check(array_column($manager->active(ZZZNM_Manager::POPUP, 150), 'ID') === [8, 2, 9], 'Descending priority, stable ascending ID for ties');
+check($manager->priority(2) === 0, 'Existing popup defaults to zero');
+$key = $manager->popup_data($posts[8])['key'];
+$meta[8]['_zzznm_priority'] = 30;
+check($manager->popup_data($posts[8])['key'] === $key, 'Priority changes preserve dismissal');
+$_POST = ['zzznm_nonce' => 'zzznm_save_8', 'zzznm_priority' => '5000'];
+$admin->save(8, $posts[8]);
+check($manager->priority(8) === 999, 'Saved priority bounded');
+$_POST['zzznm_priority'] = '-3'; $admin->save(8, $posts[8]);
+check($manager->priority(8) === 0, 'Negative priority clamped');
+function nocache_headers() {}
+function wp_send_json_success($data) { $GLOBALS['state_data'] = $data; }
+$posts = []; $meta = []; $_POST = ['page_context' => '{"page":true,"id":42}'];
+fixture(10, time()-60, time()+3600); fixture(11, time()-60, time()+3600); fixture(12, time()-60, time()+3600);
+$meta[10]['_zzznm_priority'] = 90; $meta[10]['_zzznm_location'] = 'home';
+$meta[12]['_zzznm_priority'] = 20;
+$frontend->state();
+check(array_column($state_data['popups'], 'id') === [12, 11], 'Endpoint filters location then supplies full sorted queue');
+check($state_data['popup']['id'] === 12, 'Legacy popup field remains compatible');
+$options[ZZZNM_Manager::OPTION] = ['enabled' => 0]; $frontend->state();
+check($state_data['popups'] === [] && $state_data['popup'] === null, 'Disabled popup clears full queue');
+echo "PASS: {$checks} checks; dates, DST, required fields, overlaps, boundaries, drafts, priority queue selection, dismissal keys; all PHP files parse.\n";

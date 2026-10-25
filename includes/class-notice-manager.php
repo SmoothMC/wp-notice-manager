@@ -69,14 +69,6 @@ final class ZZZNM_Manager {
         if ($from && $until && $until <= $from) {
             return 'Das Enddatum muss nach dem Startdatum liegen.';
         }
-        if ($type !== self::POPUP || !$check_overlap) { return ''; }
-        foreach (get_posts(['post_type' => self::POPUP, 'post_status' => ['publish', 'future'],
-            'numberposts' => -1, 'exclude' => [$id]]) as $other) {
-            $range = $this->schedule($other->ID);
-            if (self::overlaps($from, $until, $range['from'], $range['until'])) {
-                return sprintf('Der Zeitraum überschneidet sich mit „%s“ (#%d). Bitte wähle einen freien Zeitraum.', $other->post_title, $other->ID);
-            }
-        }
         return '';
     }
 
@@ -91,10 +83,18 @@ final class ZZZNM_Manager {
             if ($type === self::POPUP && (!$range['from'] || !$range['until'] || $range['until'] <= $range['from'])) { continue; }
             if ((!$range['from'] || $range['from'] <= $now) && (!$range['until'] || $now < $range['until'])) {
                 $active[] = $post;
-                if ($type === self::POPUP) { break; }
             }
         }
+        if ($type === self::POPUP) {
+            usort($active, function ($a, $b) {
+                return ($this->priority($b->ID) <=> $this->priority($a->ID)) ?: ($a->ID <=> $b->ID);
+            });
+        }
         return $active;
+    }
+
+    public function priority($id) {
+        return max(0, min(999, (int) get_post_meta($id, '_zzznm_priority', true)));
     }
 
     public function body($post) {

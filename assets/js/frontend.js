@@ -4,7 +4,7 @@
   const config = window.ZZZNM;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state, current = null, dialog = null, timer, showTimer, expiryTimer, refreshing = false;
-  let serverOffset = 0;
+  let serverOffset = 0, refreshAgain = false, closingTemplate = 0, nextOpening = 0;
   const seen = new Set();
   const tickerInstances = new Map();
   let complianzHeld = false, complianzPoll, complianzRelease;
@@ -162,6 +162,8 @@
     }
     if (dialog) { dialog.close(); dialog.remove(); dialog = null; }
     if (old?.template) {
+      closingTemplate = old.template;
+      nextOpening = Date.now() + 300;
       const api = window.elementorProFrontend?.modules?.popup;
       // Close only the template managed by this plugin.
       const modal = document.getElementById(`elementor-popup-modal-${old.template}`);
@@ -199,7 +201,7 @@
     if (layout) dialog.classList.add('zzznm-dialog-divi');
     dialog.append(close, inner);
     document.body.append(dialog);
-    const dismiss = () => { remember(post); closeCurrent(); };
+    const dismiss = () => { remember(current.post); closeCurrent(); nextOpening = Date.now() + 300; refresh(); };
     close.addEventListener('click', dismiss);
     dialog.addEventListener('cancel', event => { event.preventDefault(); dismiss(); });
     dialog.addEventListener('click', event => {
@@ -217,6 +219,13 @@
     updateComplianz();
     if (complianzHeld) return;
     if (!current || current.key !== post.key || now() >= post.until) return;
+    // Wait for the previous Elementor modal's exit animation before reusing its template.
+    const closing = closingTemplate && document.getElementById(`elementor-popup-modal-${closingTemplate}`);
+    if (Date.now() < nextOpening || (closing && closing.getClientRects().length)) {
+      showTimer = setTimeout(() => show(post, template, attempt), 100);
+      return;
+    }
+    closingTemplate = 0;
     const api = window.elementorProFrontend?.modules?.popup;
     if (template && !api?.showPopup && attempt < 20) {
       showTimer = setTimeout(() => show(post, template, attempt + 1), 250);
@@ -242,17 +251,21 @@
     standalone(post);
   }
   function syncPopup() {
-    const post = state.popup;
+    const eligible = state.popups.filter(post => now() < post.until && !seen.has(post.key)
+      && (config.adminPreview || (post.dismiss || 'content') === 'always' || !storage.has(post.key)));
+    // Preserve an open popup while it remains eligible; priority applies to the next opening.
+    const post = eligible.find(post => post.key === current?.key) || eligible[0] || null;
+    state.popup = post;
     fillSlots();
     updateComplianz();
     if (complianzHeld) return;
-    if (!post || now() >= post.until) { closeCurrent(); return; }
+    if (!post) { closeCurrent(); return; }
     if (current?.key === post.key) {
+      current.post = post;
       if (dialog && !dialog.classList.contains('zzznm-dialog-divi')) dialog.querySelector('.zzznm-dialog-content').replaceChildren(content(post));
       return;
     }
     closeCurrent();
-    if (seen.has(post.key) || (!config.adminPreview && (post.dismiss || 'content') !== 'always' && storage.has(post.key))) return;
     current = { key: post.key, post, template: 0 };
     showTimer = setTimeout(() => show(post, state.template), state.settings.delay);
     const expire = () => {
@@ -282,9 +295,11 @@
     }).on('elementor/popup/hide.zzznm', (_event, id) => {
       if (current?.template && Number(id) === current.template) {
         remember(current.post);
-        current = null;
-        clearTimeout(showTimer);
-        clearTimeout(expiryTimer);
+        closingTemplate = current.template;
+        nextOpening = Date.now() + 300;
+        current.template = 0; // The visitor already closed it; do not trigger another hide event.
+        closeCurrent();
+        refresh();
       }
     });
   }
@@ -418,7 +433,7 @@
     });
   }
   async function refresh() {
-    if (refreshing) return;
+    if (refreshing) { refreshAgain = true; return; }
     refreshing = true;
     clearTimeout(timer);
     const controller = new AbortController();
@@ -436,6 +451,8 @@
       const previewError = document.querySelector('[data-zzznm-preview-error]');
       if (previewError) previewError.textContent = '';
       state = payload.data;
+      // Keep compatibility with a cached response from an older plugin version.
+      state.popups = Array.isArray(state.popups) ? state.popups : (state.popup ? [state.popup] : []);
       serverOffset = state.now * 1000 - Date.now();
       bindElementor(); syncPopup(); syncTickers();
       next = Math.max(1000, Math.min(60000, (state.next - state.now) * 1000));
@@ -444,9 +461,11 @@
       if (previewError) previewError.textContent = ' Vorschau konnte nicht geladen werden. Bitte im Popup-Beitrag neu öffnen.';
       // Fail closed: stale notices must not remain visible after a network failure.
       closeCurrent();
-      if (state) { state.popup = null; state.tickers = []; fillSlots(); syncTickers(); }
+      if (state) { state.popup = null; state.popups = []; state.tickers = []; fillSlots(); syncTickers(); }
     } finally {
-      clearTimeout(timeout); refreshing = false; timer = setTimeout(refresh, next);
+      clearTimeout(timeout); refreshing = false;
+      timer = setTimeout(refresh, refreshAgain ? 0 : next);
+      refreshAgain = false;
     }
   }
   function start() {

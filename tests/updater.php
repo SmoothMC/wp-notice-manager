@@ -6,6 +6,7 @@ define('ZZZNM_VERSION', '1.0.3');
 define('HOUR_IN_SECONDS', 3600);
 define('MINUTE_IN_SECONDS', 60);
 $cache = []; $requests = 0; $checks = 0; $hooks = [];
+function current_user_can($cap) { return $GLOBALS['can_update'] ?? true; }
 function plugin_basename($file) { return 'notice-manager-by-zzzooo/notice-manager-by-zzzooo.php'; }
 function add_filter($hook, ...$args) { $GLOBALS['hooks'][] = $hook; }
 function add_action($hook, ...$args) { $GLOBALS['hooks'][] = $hook; }
@@ -55,7 +56,7 @@ $update = $updater->update(false, ['Version' => '1.0.3'], plugin_basename(ZZZNM_
 check($update['version'] === '1.0.4' && version_compare($update['version'], '1.0.3', '>'), 'New version offered');
 check($update['package'] === $manifest['download_url'], 'Installable release URL supplied');
 check(!isset($update['autoupdate']) && !in_array('auto_update_plugin', $hooks), 'Administrator controls auto-updates');
-check($requests === 1 && $ttl === 21600, 'Successful metadata cached for 6 hours');
+check($requests === 1 && $ttl === 3600, 'Successful metadata cached for one hour');
 check($request[0] === ZZZNM_Updater::METADATA && $request[1]['timeout'] === 10, 'Fixed endpoint with timeout');
 $updater->metadata(); check($requests === 1, 'Cache reused');
 $info = $updater->information(false, 'plugin_information', (object) ['slug' => ZZZNM_Updater::SLUG]);
@@ -79,4 +80,17 @@ $manifest['download_url'] = ZZZNM_Updater::REPOSITORY . '/releases/download/v1.0
 $response = ['code' => 200, 'body' => json_encode($manifest)];
 $update = $updater->update(false, ['Version' => '1.0.3'], plugin_basename(ZZZNM_FILE), []);
 check(!version_compare($update['version'], '1.0.3', '>'), 'Same version becomes no_update in WordPress core');
+check(in_array('load-update-core.php', $hooks, true), 'Native force-check hook registered');
+$before = $requests;
+$updater->update(false, [], plugin_basename(ZZZNM_FILE), []);
+check($requests === $before + 1, 'Core checks always bypass metadata cache');
+check($request[1]['headers']['Cache-Control'] === 'no-cache', 'HTTP revalidation requested');
+$_GET = ['force-check' => '1']; $can_update = false;
+$updater->force_refresh();
+check(get_site_transient(ZZZNM_Updater::CACHE) !== false, 'Unauthorized force check leaves cache intact');
+$can_update = true; $updater->force_refresh();
+check(get_site_transient(ZZZNM_Updater::CACHE) === false, 'WordPress force check clears metadata cache');
+$cache[ZZZNM_Updater::CACHE] = 'unavailable';
+$update = $updater->update(false, [], plugin_basename(ZZZNM_FILE), []);
+check($update['version'] === '1.0.3', 'Core check retries even cached failures');
 echo "PASS: {$checks} updater checks (metadata, package URLs, versions, caching, failures, isolation, details and auto-update choice).\n";

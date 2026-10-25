@@ -54,7 +54,7 @@ final class ZZZNM_Frontend {
         $popup['dismiss'] = 'always';
         $settings = $this->manager->settings();
         $settings['delay'] = 0;
-        wp_send_json_success(['popup' => $popup, 'tickers' => [], 'settings' => $settings,
+        wp_send_json_success(['popups' => [$popup], 'popup' => $popup, 'tickers' => [], 'settings' => $settings,
             'template' => $this->manager->template_id(), 'divi_template' => $this->manager->divi_template_id(true),
             'now' => $now, 'next' => $now + 60]);
     }
@@ -130,7 +130,8 @@ final class ZZZNM_Frontend {
                 if ($boundary > $now) { $next = min($next, $boundary); }
             }
         }
-        wp_send_json_success(['popup' => $popups ? $this->manager->popup_data($popups[0]) : null,
+        wp_send_json_success(['popups' => array_map([$this->manager, 'popup_data'], $popups),
+            'popup' => $popups ? $this->manager->popup_data($popups[0]) : null,
             'tickers' => $tickers, 'settings' => $settings, 'template' => $this->manager->template_id(),
             'divi_template' => $this->manager->divi_template_id(), 'now' => $now, 'next' => $next]);
     }

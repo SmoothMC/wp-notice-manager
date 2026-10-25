@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 – 2026-10-25
+
+- Native WordPress-Update-Prüfungen laden wie bei woo-cart-gifts stets frische Metadaten. „Erneut prüfen“ leert den Detail-Cache. GitHub bleibt die tokenfreie Updatequelle; automatische Updates bleiben eine WordPress-Benutzerentscheidung.
+- Priorität pro Popup (0–999, höhere zuerst; bei Gleichstand kleinere ID). Zeitliche Überschneidungen sind jetzt erlaubt; Start und Ende bleiben Pflicht.
+- Passende Popups erscheinen nacheinander nach dem Schließen. Zeitraum, Seitenauswahl, Schließregel und Complianz-Sperre bleiben wirksam. Bereits offene Popups werden nicht verdrängt; keine Wiederholungsschleife pro Seitenaufruf.
+- Divi-Inhalte und Links wechseln mit der Warteschlange. Vor Wiederverwendung eines Elementor-Templates wird dessen Schließanimation abgewartet.
+- Automatischer Release-Build bei Versionsänderungen auf main; PHP-, Updater- und Browser-Regressionsprüfungen ergänzt.
+
 ## 1.0.9 — 2026-09-23
 
 - Seitenauswahl pro Popup: alle Seiten, Homepage, Archive/Beitragsübersicht, Blogbeiträge, WordPress-Seiten oder ausgewählte Einzelseiten.

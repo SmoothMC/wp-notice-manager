@@ -1,6 +1,6 @@
-# Prüfstand · 22.09.2026
+# Prüfstand · aktualisiert 25.10.2026
 
-## Erfolgreich geprüft
+## Historischer Prüfstand bis 1.0.3 (Überschneidungssperre ab 1.1.0 ersetzt)
 
 - Version 1.0.3: 38 zusätzliche PHP-Prüfungen für den GitHub-Updater (gültige/ungültige Metadaten, feste Paketadresse, Versionen, Cache, Netzwerkfehler, Plugin-Isolation, Detailansicht und Auto-Update-Auswahl). Release-ZIP und JSON lokal erstellt und auf Versions-/Ordnerkonsistenz geprüft.
 
@@ -40,3 +40,12 @@ Zusätzliche isolierte Prüfungen für Popup-spezifische Schließregeln, Default
 ## 1.0.9
 
 Seitenauswahl isoliert für Homepage, Archive, Posts, Seiten, ausgewählte Seiten und fehlenden Kontext geprüft. Browser-Test prüft übertragenen Seitenkontext, Fade-in-Dauer, ausgeschaltete Animation, Dauer 0, reduzierte Bewegung, Elementor-Adapter und das separate Schließen-Icon. Die tatsächliche Divi-Installation bleibt ein manueller Integrationstest.
+
+
+## 1.1.0 – Popup-Warteschlange und native Update-Prüfung
+
+- PHP-Domainprüfungen: Pflichtdaten, erlaubte Überschneidungen, Priorität absteigend, ID-Gleichstand, bestehende Schließschlüssel.
+- Updater-Vertrag: reguläre Core-Prüfungen umgehen Cache und Fehlercache, „Erneut prüfen“ ist berechtigungsgeprüft, Detaildialog darf cachen.
+- `node tests/queue.cjs`: Standalone-, Divi- und Elementor-Testadapter; automatische Folge, keine Verdrängung, entfernte/abgelaufene Hinweise, gespeicherte Schließregeln, Divi-Links, Complianz-Unterbrechung und verspätetes Elementor-Hide.
+- Bestehende `tests/browser.cjs`, `tests/complianz.cjs` und `tests/preview.php` bleiben Regressionstests.
+- Browser-Tests verwenden Playwright mit separatem Chrome-Profil und nachgebildeten Builder-APIs. Abschließend auf der Zielinstallation mit echtem Divi 4 / Elementor Pro und Cache-Plugin prüfen.

@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-/** JSON-based updates, following the WooSales Manager distribution model. */
+/** Native WordPress updates with fresh metadata on every core update check. */
 final class ZZZNM_Updater {
     const SLUG = 'notice-manager-by-zzzooo';
     const REPOSITORY = 'https://github.com/SmoothMC/wp-notice-manager';
@@ -15,6 +15,7 @@ final class ZZZNM_Updater {
         add_filter('plugins_api', [$this, 'information'], 10, 3);
         add_filter('plugin_action_links_' . $this->basename, [$this, 'links']);
         add_filter('network_admin_plugin_action_links_' . $this->basename, [$this, 'links']);
+        add_action('load-update-core.php', [$this, 'force_refresh']);
         add_action('admin_post_zzznm_check_updates', [$this, 'manual_check']);
         add_action('upgrader_process_complete', [$this, 'clear_after_upgrade'], 10, 2);
     }
@@ -26,14 +27,14 @@ final class ZZZNM_Updater {
         }
         $response = wp_safe_remote_get(self::METADATA, [
             'timeout' => 10, 'redirection' => 5, 'limit_response_size' => 131072,
-            'headers' => ['Accept' => 'application/json'],
+            'headers' => ['Accept' => 'application/json', 'Cache-Control' => 'no-cache'],
             'user-agent' => 'NoticeManager/' . ZZZNM_VERSION,
         ]);
         $data = !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200
             ? json_decode(wp_remote_retrieve_body($response), true) : null;
         $data = $this->validate_metadata($data);
         // Cache failures briefly as well; never block a page with repeated calls.
-        set_site_transient(self::CACHE, $data ?: 'unavailable', $data ? 6 * HOUR_IN_SECONDS : 5 * MINUTE_IN_SECONDS);
+        set_site_transient(self::CACHE, $data ?: 'unavailable', $data ? HOUR_IN_SECONDS : 5 * MINUTE_IN_SECONDS);
         return $data;
     }
 
@@ -56,7 +57,8 @@ final class ZZZNM_Updater {
 
     public function update($update, $plugin_data, $plugin_file, $locales) {
         if ($plugin_file !== $this->basename) { return $update; }
-        $data = $this->metadata();
+        // Core controls how often checks run. Never hide a new release behind our details cache.
+        $data = $this->metadata(true);
         if (!$data) { return false; }
         // Core compares versions and populates response/no_update itself.
         // Do not force auto-updates: respect the WordPress administrator's choice.
@@ -86,12 +88,16 @@ final class ZZZNM_Updater {
         return $links;
     }
 
+    public function force_refresh() {
+        if (current_user_can('update_plugins') && !empty($_GET['force-check'])) {
+            delete_site_transient(self::CACHE);
+        }
+    }
+
     public function manual_check() {
         if (!current_user_can('update_plugins')) { wp_die('Keine Berechtigung.'); }
         check_admin_referer('zzznm_check_updates');
-        if (!$this->metadata(true)) {
-            wp_die('Die GitHub-Updateinformationen sind derzeit nicht erreichbar oder ungültig. Bitte später erneut versuchen.', 'Update-Prüfung', ['back_link' => true]);
-        }
+        delete_site_transient(self::CACHE);
         delete_site_transient('update_plugins');
         wp_update_plugins();
         wp_safe_redirect(self_admin_url('plugins.php'));

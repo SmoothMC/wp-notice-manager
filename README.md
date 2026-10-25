@@ -1,4 +1,4 @@
-# WP Notice Manager by ZZZOOO · 1.0.9
+# WP Notice Manager by ZZZOOO · 1.1.0
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -13,30 +13,34 @@ GitHub-Projekt: [SmoothMC/wp-notice-manager](https://github.com/SmoothMC/wp-noti
 
 Voraussetzungen: WordPress 6.0+, PHP 7.4+, aktuelle Browser mit nativem HTML-Dialog und Web Animations API. Standalone benötigt weder Elementor noch Divi. Elementor-Ausgabe benötigt Elementor Pro mit Popup-Modul.
 
-## Installation und Updates ab 1.0.9
+## Installation und Updates ab 1.1.0
 
 Das installierbare Paket heißt `wp-notice-manager-X.Y.Z.zip` und liegt unter [GitHub Releases](https://github.com/SmoothMC/wp-notice-manager/releases/latest). Bitte dieses ZIP verwenden, nicht GitHubs automatisch erzeugtes „Source code“-Archiv.
 
-Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.0.9 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
+Versionen bis einschließlich 1.0.2 enthalten noch keinen Updater. Deshalb Version 1.1.0 einmalig über **Plugins → Installieren → Plugin hochladen** installieren und die vorhandene Version ersetzen. Der unveränderte Ordnername erhält die Zuordnung; Beiträge und Einstellungen bleiben gespeichert.
 
-Ab 1.0.9 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
+Ab 1.1.0 erscheinen neue stabile Releases in der normalen WordPress-Plugin-Verwaltung. **Nach Updates suchen** prüft bei Bedarf sofort. Über **Automatische Aktualisierungen aktivieren** entscheidest du, ob WordPress Updates selbst installieren darf. Anders als beim bisherigen WooSales-Updater werden automatische Installationen nicht erzwungen.
 
-Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/SmoothMC/wp-notice-manager/releases/latest/download/update.json), das ZIP aus demselben versionierten GitHub-Release. Dafür werden keine GitHub-Tokens in WordPress benötigt. Erfolgreiche Prüfungen werden sechs Stunden, fehlgeschlagene fünf Minuten zwischengespeichert. Die manuelle Prüfung umgeht diesen Cache. Das Repository und die Releases müssen öffentlich erreichbar bleiben.
+Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/SmoothMC/wp-notice-manager/releases/latest/download/update.json), das ZIP aus demselben versionierten GitHub-Release. Dafür werden keine GitHub-Tokens in WordPress benötigt. Jede reguläre WordPress-Update-Prüfung lädt frische Metadaten, wie bei woo-cart-gifts. Nur der Detaildialog verwendet einen Cache (eine Stunde, bei Fehlern fünf Minuten). „Erneut prüfen“ unter Dashboard → Aktualisierungen leert diesen Cache ebenfalls. Automatische Updates folgen weiterhin der WordPress-Einstellung. Das Repository und die Releases müssen öffentlich erreichbar bleiben.
 
 ## Neue Releases veröffentlichen
 
 1. Version im PHP-Header und in `ZZZNM_VERSION` erhöhen, README und CHANGELOG aktualisieren; Tests ausführen und committen.
-2. Einen passenden Tag `vX.Y.Z` pushen oder unter **Actions → Build and publish release → Run workflow** die Version eingeben.
+2. Die Versionsänderung in der Hauptdatei nach `main` pushen (startet den Release-Workflow automatisch), einen passenden Tag `vX.Y.Z` pushen oder unter **Actions → Build and publish release → Run workflow** die Version eingeben.
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.0.9`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.1.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
 Unter **Notice Manager → Popups** einen Beitrag anlegen. Titel = sichtbare Überschrift, Editor = Inhalt. Start und Ende inklusive Uhrzeit sind zur Veröffentlichung Pflicht. Entwürfe dürfen unvollständig sein. Zeiten beziehen sich auf die WordPress-Zeitzone und werden als echte Zeitstempel gespeichert.
 
-Veröffentlichte/geplante Popup-Beiträge reservieren ihren Zeitraum. Überschneidungen werden serverseitig verhindert. Bei ungültiger Veröffentlichung wird der bearbeitete Beitrag als Entwurf gespeichert; auch ein zuvor veröffentlichter Beitrag wird dann nicht mehr angezeigt. Der Inhalt bleibt erhalten und WordPress zeigt den Grund an. Entwürfe reservieren keine Zeit. Ende ist exklusiv: 10:00–12:00 und 12:00–14:00 sind erlaubt. Die Prüfung wird durch eine Datenbanksperre gegen gleichzeitige Speichervorgänge geschützt.
+Popup-Zeiträume dürfen sich überschneiden. Alle aktuell passenden Popups bilden eine Warteschlange. Im Popup-Beitrag **Priorität** einstellen: 0–999, höhere Zahlen zuerst; bei Gleichstand kommt die kleinere Beitrags-ID zuerst. Bestehende Popups erhalten automatisch Priorität 0. Sichtbar ist immer nur ein Popup. Nach dem Schließen wird der aktuelle Plan neu geladen und das nächste passende Popup geöffnet. Ein bereits geöffnetes Popup wird nicht durch eine höhere Priorität verdrängt.
+
+Die Seitenauswahl, Endzeit und individuelle Schließregel gelten für jeden Eintrag. Bereits geschlossene Popups werden übersprungen. Auch „Bei jedem Seitenaufruf anzeigen“ bedeutet höchstens einmal innerhalb desselben Seitenaufrufs, damit keine Endlosschleife entsteht. Die Priorität allein setzt gespeicherte Schließentscheidungen nicht zurück. Während der Complianz-Banner geöffnet ist, pausiert die Warteschlange. Die geschützte Vorschau zeigt weiterhin nur den ausgewählten Beitrag.
+
+Start und Ende bleiben Pflicht. Bei ungültiger Veröffentlichung wird der Beitrag als Entwurf gespeichert; der Inhalt bleibt erhalten. Ende ist exklusiv: Ein Popup mit Ende 12:00 ist ab 12:00 nicht mehr aktiv.
 
 **Veröffentlichen** gibt den Hinweis für seinen Anzeigezeitraum frei. Das separate WordPress-Veröffentlichungsdatum unverändert lassen; die Hinweisplanung erfolgt über die Felder Start/Ende. Maximal ein Popup des Managers wird angezeigt. Andere Popup-Plugins werden nicht gesteuert.
 
@@ -147,6 +151,6 @@ Im Popup-Beitrag zuerst speichern, dann **Popup-Vorschau öffnen** anklicken. Di
 
 ### Seitenauswahl und Fade-in
 
-Im jeweiligen Popup unter **Auf welchen Seiten anzeigen?** wählen: alle Seiten (Standard), nur Homepage, Archive und Beitragsübersicht, einzelne Blogbeiträge, alle WordPress-Seiten oder ausgewählte Einzelseiten. Mehrere konkrete Seiten mit Strg/Cmd auswählen. Eine leere Auswahl zeigt nichts an. „Homepage“ folgt der in WordPress konfigurierten Startseite; „Archive“ enthält auch die Beitragsübersicht, „Posts“ meint einzelne Beiträge vom Typ Beitrag. Die geschützte Vorschau ignoriert die Seiteneinschränkung. Zeiträume bleiben wie bisher global überschneidungsfrei. Nach Änderungen an der WordPress-Startseite den Seiten-Cache leeren.
+Im jeweiligen Popup unter **Auf welchen Seiten anzeigen?** wählen: alle Seiten (Standard), nur Homepage, Archive und Beitragsübersicht, einzelne Blogbeiträge, alle WordPress-Seiten oder ausgewählte Einzelseiten. Mehrere konkrete Seiten mit Strg/Cmd auswählen. Eine leere Auswahl zeigt nichts an. „Homepage“ folgt der in WordPress konfigurierten Startseite; „Archive“ enthält auch die Beitragsübersicht, „Posts“ meint einzelne Beiträge vom Typ Beitrag. Die geschützte Vorschau ignoriert die Seiteneinschränkung. Überschneidende Zeiträume werden über die Popup-Priorität und Warteschlange gesteuert. Nach Änderungen an der WordPress-Startseite den Seiten-Cache leeren.
 
 Unter den globalen Popup-Einstellungen kann **Popup sanft einblenden (Fade-in)** abgeschaltet und die Dauer von 0 bis 5000 ms angepasst werden. Standard ist 300 ms. Die Startverzögerung bleibt unabhängig. Standalone und Divi blenden auch den Hintergrund ein; Elementor erhält eine zusätzliche Transparenzanimation. Für ein einheitliches Ergebnis zusätzliche Elementor-Eingangsanimationen im Template ausschalten. Bei reduzierter Bewegung wird nicht animiert.

@@ -3,7 +3,6 @@ if (!defined('ABSPATH')) { exit; }
 
 final class ZZZNM_Admin {
     private $manager;
-    private $locked = false;
 
     public function __construct($manager) {
         $this->manager = $manager;
@@ -16,11 +15,13 @@ final class ZZZNM_Admin {
         add_action('admin_notices', [$this, 'notices']);
         add_action('admin_post_zzznm_import', [$this, 'import']);
         add_action('admin_bar_menu', [$this, 'admin_bar'], 100);
-        add_action('shutdown', [$this, 'unlock']);
         foreach ([ZZZNM_Manager::POPUP, ZZZNM_Manager::TICKER] as $type) {
             add_filter('manage_' . $type . '_posts_columns', [$this, 'columns']);
             add_action('manage_' . $type . '_posts_custom_column', [$this, 'column'], 10, 2);
         }
+        add_filter('manage_' . ZZZNM_Manager::POPUP . '_posts_columns', static function ($columns) {
+            $columns['zzznm_priority'] = 'Priorität'; return $columns;
+        });
         add_filter('post_row_actions', [$this, 'row_actions'], 10, 2);
     }
 
@@ -123,7 +124,7 @@ final class ZZZNM_Admin {
     public function box($post) {
         wp_nonce_field('zzznm_save_' . $post->ID, 'zzznm_nonce');
         $popup = $post->post_type === ZZZNM_Manager::POPUP;
-        echo '<p>' . ($popup ? 'Start und Ende sind für die Veröffentlichung erforderlich. Veröffentlichte Popups dürfen sich zeitlich nicht überschneiden.' : 'Beide Datumsfelder sind optional. Ohne Zeitraum bleibt dieser Tickertext aktiv. Mehrere Tickertexte dürfen gleichzeitig aktiv sein.') . '</p>';
+        echo '<p>' . ($popup ? 'Start und Ende sind für die Veröffentlichung erforderlich. Gleichzeitig aktive Popups erscheinen nacheinander: höhere Priorität zuerst, bei gleicher Priorität die kleinere Beitrags-ID zuerst.' : 'Beide Datumsfelder sind optional. Ohne Zeitraum bleibt dieser Tickertext aktiv. Mehrere Tickertexte dürfen gleichzeitig aktiv sein.') . '</p>';
         foreach (['from' => 'Start', 'until' => 'Ende'] as $key => $label) {
             $value = get_post_meta($post->ID, '_zzznm_' . $key, true);
             $value = $value ? wp_date('Y-m-d\TH:i', (int) $value, wp_timezone()) : '';
@@ -133,6 +134,7 @@ final class ZZZNM_Admin {
         }
         echo '<p>Zeitzone: <strong>' . esc_html(wp_timezone_string()) . '</strong>. Das Ende ist exklusiv: Ein weiterer Hinweis darf genau dann beginnen.</p>';
         if ($popup) {
+            echo '<p><label for="zzznm-priority"><strong>Priorität</strong></label><br><input id="zzznm-priority" name="zzznm_priority" type="number" min="0" max="999" step="1" value="' . (int) $this->manager->priority($post->ID) . '"><br>0–999, Standard: 0. Höhere Zahlen erscheinen zuerst. Nach dem Schließen folgt das nächste passende Popup; jedes Popup höchstens einmal pro Seitenaufruf.</p>';
             if ($post->post_status !== 'auto-draft') {
                 $preview_url = add_query_arg(['zzznm_preview' => $post->ID, 'zzznm_nonce' => wp_create_nonce('zzznm_preview_' . $post->ID)], home_url('/'));
                 echo '<p><a class="button button-secondary" href="' . esc_url($preview_url) . '" target="_blank" rel="noopener">Popup-Vorschau öffnen</a></p><p class="description">Zeigt den zuletzt gespeicherten Inhalt mit dem ausgewählten Template. Änderungen bitte zuerst speichern. Nur für Administratoren; Zeitraum, Schließregel und Complianz-Sperre werden in dieser Vorschau ignoriert.</p>';
@@ -203,15 +205,6 @@ final class ZZZNM_Admin {
         }
         $publishing = in_array($data['post_status'], ['publish', 'future'], true);
         if (!$publishing) { return $data; }
-        // Serialize popup publication checks across concurrent admin requests.
-        if ($data['post_type'] === ZZZNM_Manager::POPUP && !$this->locked) {
-            $this->lock();
-            if (!$this->locked) {
-                $data['post_status'] = 'draft';
-                $this->error('Ein anderer Popup-Speichervorgang läuft. Der Beitrag wurde als Entwurf gespeichert. Bitte kurz warten und erneut veröffentlichen.');
-                return $data;
-            }
-        }
         $error = $invalid ? 'Bitte gültige Datumswerte eingeben. Diese Ortszeit existiert möglicherweise wegen der Zeitumstellung nicht.'
             : $this->manager->validate($data['post_type'], $id, $range['from'], $range['until']);
         if ($error) {
@@ -221,30 +214,11 @@ final class ZZZNM_Admin {
         return $data;
     }
 
-    public function unlock() {
-        if ($this->locked) {
-            global $wpdb;
-            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', 'zzznm_' . md5($wpdb->prefix)));
-            $this->locked = false;
-        }
-    }
-
-    private function lock() {
-        if (!$this->locked) {
-            global $wpdb;
-            // MySQL releases advisory locks automatically if a request disconnects.
-            $this->locked = (int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 1)', 'zzznm_' . md5($wpdb->prefix))) === 1;
-        }
-        return $this->locked;
-    }
-
     public function verify_saved($id, $post) {
         if (!in_array($post->post_type, [ZZZNM_Manager::POPUP, ZZZNM_Manager::TICKER], true)
             || !in_array($post->post_status, ['publish', 'future'], true)) { return; }
         $range = $this->manager->schedule($id);
-        $error = $post->post_type === ZZZNM_Manager::POPUP && !$this->lock()
-            ? 'Der Zeitraum konnte wegen eines parallelen Speichervorgangs nicht geprüft werden.'
-            : $this->manager->validate($post->post_type, $id, $range['from'], $range['until']);
+        $error = $this->manager->validate($post->post_type, $id, $range['from'], $range['until']);
         if ($error) {
             wp_update_post(['ID' => $id, 'post_status' => 'draft']);
             $this->error($error . ' Der Beitrag bleibt als Entwurf gespeichert.');
@@ -263,6 +237,7 @@ final class ZZZNM_Admin {
             update_post_meta($id, '_zzznm_ticker_title', $this->input('zzznm_ticker_title'));
         }
         if ($post->post_type === ZZZNM_Manager::POPUP) {
+            if (isset($_POST['zzznm_priority'])) { update_post_meta($id, '_zzznm_priority', max(0, min(999, (int) $this->input('zzznm_priority')))); }
             if (isset($_POST['zzznm_location'])) {
                 $mode = $this->input('zzznm_location');
                 update_post_meta($id, '_zzznm_location', isset($this->manager->locations()[$mode]) ? $mode : 'all');
@@ -305,6 +280,7 @@ final class ZZZNM_Admin {
 
     public function column($column, $id) {
         $range = $this->manager->schedule($id);
+        if ($column === 'zzznm_priority') { echo (int) $this->manager->priority($id); }
         if ($column === 'zzznm_range') {
             echo esc_html(($range['from'] ? wp_date('d.m.Y. H:i', $range['from']) : 'Ohne Start') . ' → ' . ($range['until'] ? wp_date('d.m.Y. H:i', $range['until']) : 'Ohne Ende'));
         }
