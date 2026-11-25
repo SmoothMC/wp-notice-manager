@@ -6,6 +6,7 @@ final class ZZZNM_Admin {
 
     public function __construct($manager) {
         $this->manager = $manager;
+        add_action('admin_enqueue_scripts', [$this, 'editor_assets']);
         add_action('admin_menu', [$this, 'menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('add_meta_boxes', [$this, 'boxes']);
@@ -23,6 +24,13 @@ final class ZZZNM_Admin {
             $columns['zzznm_priority'] = 'Priorität'; return $columns;
         });
         add_filter('post_row_actions', [$this, 'row_actions'], 10, 2);
+    }
+
+    public function editor_assets() {
+        $screen = get_current_screen();
+        if ($screen && $screen->base === 'post' && $screen->post_type === ZZZNM_Manager::POPUP) {
+            wp_enqueue_script('zzznm-editor', plugins_url('assets/js/editor.js', ZZZNM_FILE), [], ZZZNM_VERSION, true);
+        }
     }
 
     private function content_links() {
@@ -178,7 +186,7 @@ final class ZZZNM_Admin {
         }
         echo '<p>Zeitzone: <strong>' . esc_html(wp_timezone_string()) . '</strong>. Das Ende ist exklusiv: Ein weiterer Hinweis darf genau dann beginnen.</p>';
         if ($popup) {
-            echo '<p><label for="zzznm-priority"><strong>Priorität</strong></label><br><input id="zzznm-priority" name="zzznm_priority" type="number" min="0" max="999" step="1" value="' . (int) $this->manager->priority($post->ID) . '"><br>0–999, Standard: 0. Höhere Zahlen erscheinen zuerst. Nach dem Schließen folgt das nächste passende Popup; jedes Popup höchstens einmal pro Seitenaufruf.</p>';
+            echo '<p data-zzznm-auto><label for="zzznm-priority"><strong>Priorität</strong></label><br><input id="zzznm-priority" name="zzznm_priority" type="number" min="0" max="999" step="1" value="' . (int) $this->manager->priority($post->ID) . '"><br>0–999, Standard: 0. Höhere Zahlen erscheinen zuerst. Nach dem Schließen folgt das nächste passende Popup; jedes Popup höchstens einmal pro Seitenaufruf.</p>';
             if ($post->post_status !== 'auto-draft') {
                 $preview_url = add_query_arg(['zzznm_preview' => $post->ID, 'zzznm_nonce' => wp_create_nonce('zzznm_preview_' . $post->ID)], home_url('/'));
                 echo '<p><a class="button button-secondary" href="' . esc_url($preview_url) . '" target="_blank" rel="noopener">Popup-Vorschau öffnen</a></p><p class="description">Zeigt den zuletzt gespeicherten Inhalt mit dem ausgewählten Template. Änderungen bitte zuerst speichern. Nur für berechtigte Hinweis-Verwalter; Zeitraum, Schließregel und Complianz-Sperre werden in dieser Vorschau ignoriert.</p>';
@@ -189,12 +197,12 @@ final class ZZZNM_Admin {
             foreach (['auto' => 'Automatisch auf passenden Seiten', 'manual' => 'Nur per Klick (Button / Link)'] as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->trigger_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
             }
-            echo '</select></p><p>Für Klick-Popups als Linkziel <code>#notice-popup-' . (int) $post->ID . '</code> verwenden. Alternativ am Button/Link die CSS-Klasse oder ID <code>notice-popup-' . (int) $post->ID . '</code> setzen (ohne #). Auch <code>data-notice-popup="' . (int) $post->ID . '"</code> ist möglich. Die Seitenauswahl und Schließregel gelten dann nicht; Veröffentlichung, Zeitraum und Complianz-Sperre bleiben wirksam. Jeder bewusste Klick darf das Popup erneut öffnen.</p>';
-            echo '<p><label for="zzznm-location"><strong>Auf welchen Seiten anzeigen?</strong></label><br><select id="zzznm-location" name="zzznm_location">';
+            echo '</select></p><p data-zzznm-manual>Für Klick-Popups als Linkziel <code>#notice-popup-' . (int) $post->ID . '</code> verwenden. Alternativ am Button/Link die CSS-Klasse oder ID <code>notice-popup-' . (int) $post->ID . '</code> setzen (ohne #). Auch <code>data-notice-popup="' . (int) $post->ID . '"</code> ist möglich. Die Seitenauswahl und Schließregel gelten dann nicht; Veröffentlichung, Zeitraum und Complianz-Sperre bleiben wirksam. Jeder bewusste Klick darf das Popup erneut öffnen.</p>';
+            echo '<div data-zzznm-auto><p><label for="zzznm-location"><strong>Auf welchen Seiten anzeigen?</strong></label><br><select id="zzznm-location" name="zzznm_location">';
             foreach ($this->manager->locations() as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->location_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
             }
-            echo '</select></p><p><label for="zzznm-pages">Einzelseiten auswählen (nur bei „Nur ausgewählte Einzelseiten“)</label><br><input type="hidden" name="zzznm_pages_present" value="1"><select id="zzznm-pages" name="zzznm_pages[]" multiple size="7" style="min-width:280px;max-width:100%">';
+            echo '</select></p><p data-zzznm-selected><label for="zzznm-pages">Einzelseiten auswählen (nur bei „Nur ausgewählte Einzelseiten“)</label><br><input type="hidden" name="zzznm_pages_present" value="1"><select id="zzznm-pages" name="zzznm_pages[]" multiple size="7" style="min-width:280px;max-width:100%">';
             $selected_pages = array_map('absint', (array) get_post_meta($post->ID, '_zzznm_pages', true));
             foreach (get_pages(['post_status' => 'publish', 'sort_column' => 'post_title']) as $page) {
                 echo '<option value="' . (int) $page->ID . '" ' . selected(in_array((int) $page->ID, $selected_pages, true), true, false) . '>' . esc_html($page->post_title . ' (#' . $page->ID . ')') . '</option>';
@@ -204,10 +212,15 @@ final class ZZZNM_Admin {
             foreach (['content' => 'Erneut bei geändertem Inhalt oder Zeitraum', 'date' => 'Erneut bei geändertem Zeitraum', 'forever' => 'Diesen Popup-Beitrag dauerhaft ausblenden', 'session' => 'Für diese Tab-Sitzung ausblenden', 'always' => 'Bei jedem Seitenaufruf anzeigen'] as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->dismiss_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
             }
-            echo '</select></p><p class="description">Tab-Sitzung: ohne Cookie, gilt nach Neuladen und beim Seitenwechsel im selben Tab. Neue Tabs sind unabhängig; duplizierte oder wiederhergestellte Tabs können die Entscheidung übernehmen.</p>';
+            echo '</select></p><p class="description">Tab-Sitzung: ohne Cookie, gilt nach Neuladen und beim Seitenwechsel im selben Tab. Neue Tabs sind unabhängig; duplizierte oder wiederhergestellte Tabs können die Entscheidung übernehmen.</p></div>';
             echo '<p><label for="zzznm-button-text"><strong>Button-Text</strong></label><br><input class="regular-text" id="zzznm-button-text" name="zzznm_button_text" type="text" value="' . esc_attr(get_post_meta($post->ID, '_zzznm_button_text', true)) . '" placeholder="Weitere Informationen"></p>';
             echo '<p><label for="zzznm-button-url"><strong>Button-Link</strong></label><br><input class="large-text" id="zzznm-button-url" name="zzznm_button_url" type="text" value="' . esc_attr(get_post_meta($post->ID, '_zzznm_button_url', true)) . '" placeholder="https://example.de/weitere-informationen"><br>Optional. Der vollständige Button erscheint nur, wenn Text und Link vorhanden sind. Möglich sind https://, http://, mailto:, tel: oder interne Pfade.</p>';
             echo '<p>Im Template: <code>[notice_popup_button]</code> in ein Textmodul einfügen. Für ein eigenes Divi-Button- oder Bildmodul als normalen Link <code>#notice-popup-link</code> verwenden. Optional übernimmt die CSS-Klasse <code>zzznm-popup-button</code> am Button-Modul auch den Button-Text.</p>';
+            echo '<fieldset id="zzznm-video-options" hidden><legend><strong>Video im Popup</strong></legend><input type="hidden" name="zzznm_video_present" value="1">';
+            foreach (['autoplay' => 'Beim Öffnen automatisch abspielen', 'muted' => 'Stumm abspielen'] as $option => $label) {
+                echo '<p><label><input type="checkbox" name="zzznm_video_' . $option . '" value="1" ' . checked(get_post_meta($post->ID, '_zzznm_video_' . $option, true), '1', false) . '> ' . esc_html($label) . '</label></p>';
+            }
+            echo '<p class="description">Gilt für Videos im Beitragstext. Die Wiedergabe startet erst im geöffneten Popup nach Complianz-Freigabe. Autoplay mit Ton kann der Browser blockieren; dann bleibt der Play-Button verfügbar. Stummes Autoplay wird meist zugelassen.</p></fieldset>';
             $columns = max(1, (int) get_post_meta($post->ID, '_zzznm_columns', true));
             echo '<p><label for="zzznm-columns">Textspalten</label> <select id="zzznm-columns" name="zzznm_columns">';
             for ($i = 1; $i <= 6; $i++) { echo '<option ' . selected($columns, $i, false) . '>' . $i . '</option>'; }
@@ -286,6 +299,11 @@ final class ZZZNM_Admin {
             update_post_meta($id, '_zzznm_ticker_title', $this->input('zzznm_ticker_title'));
         }
         if ($post->post_type === ZZZNM_Manager::POPUP) {
+            if (isset($_POST['zzznm_video_present'])) {
+                foreach (['autoplay', 'muted'] as $option) {
+                    update_post_meta($id, '_zzznm_video_' . $option, $this->input('zzznm_video_' . $option) === '1' ? '1' : '0');
+                }
+            }
             if (isset($_POST['zzznm_priority'])) { update_post_meta($id, '_zzznm_priority', max(0, min(999, (int) $this->input('zzznm_priority')))); }
             if (isset($_POST['zzznm_trigger'])) { update_post_meta($id, '_zzznm_trigger', $this->input('zzznm_trigger') === 'manual' ? 'manual' : 'auto'); }
             if (isset($_POST['zzznm_location'])) {

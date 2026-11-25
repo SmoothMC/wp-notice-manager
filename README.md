@@ -1,4 +1,4 @@
-# WP Notice Manager · 1.3.1
+# WP Notice Manager · 1.3.2
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten. Die Release-Beschreibung wird ausschließlich aus dem passenden Versionsabschnitt des Changelogs erzeugt.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.3.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.3.2`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -211,6 +211,12 @@ WordPress-Video-Shortcodes mit direkten Videodateien werden unterstützt, beispi
 [video mp4="https://example.org/wp-content/uploads/film.mp4"][/video]
 ```
 
-Das Video nutzt native Browser-Bedienelemente. Es startet erst durch die Wiedergabeaktion des Besuchers; Autoplay ist ausgeschaltet. Beim Schließen oder Wechseln des Popups wird das Video gestoppt. Regelmäßige Statusprüfungen ersetzen unveränderten Inhalt nicht. In Divi-/Elementor-Templates den Popup-Inhaltsplatzhalter verwenden, um den jeweiligen Beitragstext samt Video einzusetzen. YouTube-/Vimeo-Seitenlinks sind keine direkten Videodateien und werden durch diese Erweiterung nicht als externe Player eingebettet. Andere verschachtelte Shortcodes bleiben unverändert.
+Das Video nutzt native Browser-Bedienelemente. Standardmäßig startet es erst durch die Wiedergabeaktion des Besuchers. Ab 1.3.2 sind Autoplay und Stummschaltung pro Popup optional einstellbar. Beim Schließen oder Wechseln des Popups wird das Video gestoppt. Regelmäßige Statusprüfungen ersetzen unveränderten Inhalt nicht. In Divi-/Elementor-Templates den Popup-Inhaltsplatzhalter verwenden, um den jeweiligen Beitragstext samt Video einzusetzen. YouTube-/Vimeo-Seitenlinks sind keine direkten Videodateien und werden durch diese Erweiterung nicht als externe Player eingebettet. Andere verschachtelte Shortcodes bleiben unverändert.
 
 Video-Test mit echtem WordPress-Core: `php tests/video.php /pfad/zu/wordpress`. Browser-Tests benötigen Node und Playwright; `node tests/trigger.cjs` prüft die Klick-Auslöser und den Video-Lebenszyklus mit allen drei Renderern.
+
+### Video-Optionen und passende Editorfelder (ab 1.3.2)
+
+Bei „Nur per Klick“ werden Priorität, Seitenauswahl und Schließregel ausgeblendet; gespeichert bleiben ihre Werte erhalten. Die Einzelseitenauswahl erscheint nur im entsprechenden Seitenmodus. Sobald der Beitragstext einen Video-Shortcode oder ein Video-Element enthält, erscheinen die Optionen „Beim Öffnen automatisch abspielen“ und „Stumm abspielen“. Beide sind standardmäßig ausgeschaltet. Die Wiedergabe beginnt erst im sichtbaren Popup und nach Complianz-Freigabe. Browser können Autoplay mit Ton blockieren; die nativen Bedienelemente bleiben verfügbar. Videos in einem externen Template werden nicht durch die Beitragserkennung erfasst.
+
+Popup-Links unterstützen auch vollständige URLs zur aktuellen Seite mit passendem Popup-Hash. Der Popup-Klick wird vor den gewöhnlichen Slider-Klickaktionen behandelt; der Fokus wechselt in den Dialog und beim Schließen zurück zu einem weiterhin sichtbaren, zugänglichen Auslöser.

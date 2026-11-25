@@ -4,7 +4,7 @@
   const config = window.ZZZNM;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state, current = null, dialog = null, timer, showTimer, expiryTimer, refreshing = false;
-  let manualId = 0;
+  let manualId = 0, triggerFocus = null;
   let serverOffset = 0, refreshAgain = false, closingTemplate = 0, nextOpening = 0;
   const seen = new Set();
   const tickerInstances = new Map();
@@ -164,8 +164,21 @@
     seen.add(post.key);
     if (!config.adminPreview && (post.dismiss || 'content') !== 'always') storage.set(post);
   }
+  function startMedia(root) {
+    if (!root || !current || complianzHeld || !root.getClientRects().length) return;
+    root.querySelectorAll('.zzznm-text video').forEach(video => {
+      video.autoplay = false;
+      video.muted = Boolean(current.post.video_muted);
+      video.playsInline = true;
+      if (!current.post.video_autoplay || video.dataset.zzznmStarted === current.key) return;
+      video.dataset.zzznmStarted = current.key;
+      const result = video.play();
+      if (result?.catch) result.catch(() => { /* Browser policy: native controls remain available. */ });
+    });
+  }
   function stopMedia(root) {
     root?.querySelectorAll('video, audio').forEach(media => {
+      delete media.dataset.zzznmStarted;
       try { media.pause(); media.currentTime = 0; } catch (_) { /* Media may not have loaded yet. */ }
     });
   }
@@ -180,6 +193,10 @@
       document.getElementById('zzznm-divi-template')?.append(dialog.querySelector('.zzznm-divi-content'));
     }
     if (dialog) { dialog.close(); dialog.remove(); dialog = null; }
+    if (old?.manual && !manualId && triggerFocus?.isConnected && !triggerFocus.closest('[aria-hidden="true"], [hidden], [inert]') && triggerFocus.getClientRects().length) {
+      triggerFocus.focus({ preventScroll: true });
+    }
+
     if (old?.template) {
       closingTemplate = old.template;
       nextOpening = Date.now() + 300;
@@ -233,6 +250,7 @@
     fadeIn(dialog);
     if (layout) window.dispatchEvent(new Event('resize'));
     close.focus();
+    startMedia(dialog);
   }
   function show(post, template, attempt = 0) {
     updateComplianz();
@@ -258,6 +276,7 @@
         fadeIn(document.getElementById(`elementor-popup-modal-${template}`));
         if (!current) return;
         fillSlots();
+        startMedia(document.getElementById(`elementor-popup-modal-${template}`));
         // Some cached pages do not contain the selected template. Fall back once.
         showTimer = setTimeout(() => {
           if (!current || current.key !== post.key) return;
@@ -314,6 +333,7 @@
       updateComplianz();
       fillSlots();
       if (!complianzHeld && current && !dialog) fadeIn(document.getElementById(`elementor-popup-modal-${id}`));
+      if (!complianzHeld && current && !dialog) startMedia(document.getElementById(`elementor-popup-modal-${id}`));
       // A late Elementor response must not overlap the standalone fallback.
       if (complianzHeld || dialog || !current || now() >= current.post.until) {
         document.getElementById(`elementor-popup-modal-${id}`)?.querySelector('.dialog-close-button, .dialog-lightbox-close-button')?.click();
@@ -514,7 +534,11 @@
     for (let node = target instanceof Element ? target : target?.parentElement; node; node = node.parentElement) {
       const data = node.getAttribute('data-notice-popup');
       if (data && /^[1-9]\d*$/.test(data)) return Number(data);
-      const href = node.getAttribute('href') || '';
+      let href = node.getAttribute('href') || '';
+      try {
+        const url = new URL(href, location.href);
+        if (url.origin === location.origin && url.pathname === location.pathname && url.search === location.search) href = url.hash;
+      } catch (_) { /* Ignore invalid URLs. */ }
       const match = /^#notice-popup-([1-9]\d*)$/.exec(href)
         || /^notice-popup-([1-9]\d*)$/.exec(node.id)
         || [...node.classList].map(name => /^notice-popup-([1-9]\d*)$/.exec(name)).find(Boolean);
@@ -527,12 +551,15 @@
       if (config.adminPreview || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const id = triggerId(event.target);
       if (!Number.isSafeInteger(id) || id <= 0) return;
-      event.preventDefault(); triggerMessage('');
+      event.preventDefault(); event.stopPropagation(); triggerMessage('');
+      triggerFocus = event.target.closest('a, button, [tabindex]');
+      // Slider handlers must not hide the focused trigger while our popup loads.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       if (manualId !== id) closeCurrent();
       manualId = id;
       // A fresh server check also handles an expired, unpublished or disabled popup.
       refresh();
-    });
+    }, true);
     if (config.adminPreview) document.querySelector('[data-zzznm-preview-reopen]')?.addEventListener('click', () => {
       seen.clear(); closeCurrent(); refresh();
     });

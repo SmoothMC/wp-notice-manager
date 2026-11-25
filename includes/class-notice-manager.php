@@ -182,7 +182,7 @@ final class ZZZNM_Manager {
         }
         if ($dismiss === 'content') { $key .= '|' . $post->post_title . '|' . $post->post_content;
             if ($button_text !== '' || $button_url !== '') { $key .= '|' . $button_text . '|' . $button_url; } }
-        return ['id' => $post->ID, 'button_text' => $button_text, 'button_url' => $button_url, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post),
+        return ['id' => $post->ID, 'button_text' => $button_text, 'button_url' => $button_url, 'dismiss' => $dismiss, 'heading' => $post->post_title, 'html' => $this->body($post), 'video_autoplay' => get_post_meta($post->ID, '_zzznm_video_autoplay', true) === '1', 'video_muted' => get_post_meta($post->ID, '_zzznm_video_muted', true) === '1',
             'columns' => max(1, min(6, (int) get_post_meta($post->ID, '_zzznm_columns', true))),
             'until' => $range['until'], 'key' => 'zzznm_closed_' . md5($key)];
     }

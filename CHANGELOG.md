@@ -5,6 +5,19 @@ New = neue Funktionen · Fix = Fehlerbehebungen · Change = Änderungen · Remov
 
 Die GitHub-Release-Beschreibungen enthalten jeweils nur die Änderungen ihrer Version. Die vollständige Historie bleibt hier erhalten.
 
+## 1.3.2 – 2026-11-25
+
+### New
+- Video-Erkennung im Popup-Editor mit optionalem Autoplay und Stummschaltung pro Popup. Wiedergabe startet erst nach Öffnung und Complianz-Freigabe; native Play-Bedienelemente bleiben bei blockiertem Autoplay nutzbar.
+
+### Change
+- Editorfelder folgen der Öffnungsart: Priorität, Seitenauswahl und Schließregel nur für automatische Popups; Einbindungshinweise nur für Klick-Popups. Gespeicherte Werte bleiben erhalten.
+- Einzelseitenauswahl wird nur beim passenden Seitenmodus eingeblendet.
+
+### Fix
+- Popup-Klicks werden vor gewöhnlichen Slider-Klickaktionen abgefangen, damit der fokussierte Auslöser nicht durch deren Aktion verborgen wird. Fokus-Rückgabe nach dem Schließen an weiterhin zugängliche Auslöser.
+- Vollständige Links zur aktuellen Seite mit Popup-Hash werden als Klick-Auslöser erkannt.
+
 ## 1.3.1 – 2026-11-25
 
 ### Fix
