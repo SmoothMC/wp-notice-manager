@@ -121,8 +121,42 @@ final class ZZZNM_Manager {
         return max(0, min(999, (int) get_post_meta($id, '_zzznm_priority', true)));
     }
 
+    public function trigger_mode($id) {
+        return get_post_meta($id, '_zzznm_trigger', true) === 'manual' ? 'manual' : 'auto';
+    }
+
     public function body($post) {
-        return wp_kses_post(wpautop($post->post_content));
+        $html = wp_kses_post(wpautop($post->post_content));
+        if ($post->post_type !== self::POPUP || strpos($html, '[video') === false) { return $html; }
+        // Use WordPress's video shortcode, with native controls for AJAX-inserted markup.
+        // Deliberately do not execute arbitrary plugin shortcodes or recursive popup slots.
+        $native = static function () { return 'native'; };
+        add_filter('wp_video_shortcode_library', $native, PHP_INT_MAX);
+        $index = 0;
+        try {
+            $html = preg_replace_callback('/' . get_shortcode_regex(['video']) . '/s', static function ($m) use ($post, &$index) {
+                if ($m[1] === '[' && $m[6] === ']') { return substr($m[0], 1, -1); }
+                $attrs = shortcode_parse_atts($m[3]);
+                $attrs = is_array($attrs) ? $attrs : [];
+                $attrs['class'] = 'zzznm-video';
+                $attrs['autoplay'] = false;
+                $attrs['preload'] = 'none';
+                $output = (string) wp_video_shortcode($attrs, $m[5]);
+                // Stable IDs keep periodic state refreshes from restarting video playback.
+                $output = preg_replace('/id="video-\d+-\d+"/', 'id="zzznm-video-' . (int) $post->ID . '-' . ++$index . '"', $output);
+                // WordPress also appends its per-request instance counter to each media URL.
+                $output = preg_replace_callback('/(<source\\s[^>]*src=")([^"]*)(")/', static function ($source) {
+                    return $source[1] . esc_url(remove_query_arg('_', html_entity_decode($source[2], ENT_QUOTES, 'UTF-8'))) . $source[3];
+                }, $output);
+                return $m[1] . $output . $m[6];
+            }, shortcode_unautop($html));
+        } finally {
+            remove_filter('wp_video_shortcode_library', $native, PHP_INT_MAX);
+        }
+        $allowed = wp_kses_allowed_html('post');
+        $allowed['source'] = ['src' => true, 'type' => true, 'media' => true];
+        $allowed['track'] = ['src' => true, 'kind' => true, 'srclang' => true, 'label' => true, 'default' => true];
+        return wp_kses($html, $allowed);
     }
 
     public function popup_data($post) {

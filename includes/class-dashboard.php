@@ -30,6 +30,7 @@ final class ZZZNM_Dashboard {
 
     public function location($post) {
         if ($post->post_type === ZZZNM_Manager::TICKER) { return 'Am eingebundenen Ticker-Shortcode'; }
+        if ($this->manager->trigger_mode($post->ID) === 'manual') { return 'Nur per Klick · #notice-popup-' . $post->ID; }
         $mode = $this->manager->location_mode($post->ID);
         if ($mode !== 'selected') { return $this->manager->locations()[$mode]; }
         $count = count($this->page_ids($post->ID));
@@ -53,7 +54,7 @@ final class ZZZNM_Dashboard {
             if (get_post_meta($post->ID, '_zzznm_raw_from', true) || get_post_meta($post->ID, '_zzznm_raw_until', true)) {
                 $issues[] = 'Ungültige Datumseingabe korrigieren.';
             }
-            if ($popup && $this->manager->location_mode($post->ID) === 'selected' && !$this->page_ids($post->ID)) {
+            if ($popup && $this->manager->trigger_mode($post->ID) === 'auto' && $this->manager->location_mode($post->ID) === 'selected' && !$this->page_ids($post->ID)) {
                 $issues[] = 'Keine veröffentlichte Einzelseite ausgewählt.';
             }
             if ($post->post_password !== '') { $issues[] = 'Passwortgeschützte Hinweise werden nicht angezeigt.'; }
@@ -98,7 +99,7 @@ final class ZZZNM_Dashboard {
             $popup = $post->post_type === ZZZNM_Manager::POPUP;
             $title = trim($post->post_title) !== '' ? $post->post_title : '(Ohne Titel)';
             $label = $popup ? 'Popup' : 'Ticker';
-            if ($kind === 'active' && $popup) { $label .= ' · Reihenfolge ' . ++$rank; }
+            if ($kind === 'active' && $popup && $this->manager->trigger_mode($post->ID) === 'auto') { $label .= ' · Reihenfolge ' . ++$rank; }
             if ($popup) { $label .= ' · Priorität ' . $this->manager->priority($post->ID); }
             echo '<li><div class="zzznm-dashboard-entry-head"><strong>' . esc_html($title) . '</strong><span class="zzznm-dashboard-type">' . ($popup ? 'Popup' : 'Ticker') . '</span></div><div class="zzznm-dashboard-meta">' . esc_html($label) . '</div><div class="zzznm-dashboard-detail">';
             echo esc_html($this->location($post)) . '<br>';

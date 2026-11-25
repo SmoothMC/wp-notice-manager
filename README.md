@@ -1,4 +1,4 @@
-# WP Notice Manager · 1.2.2
+# WP Notice Manager · 1.3.0
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten. Die Release-Beschreibung wird ausschließlich aus dem passenden Versionsabschnitt des Changelogs erzeugt.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.2.2`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.3.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 
@@ -60,7 +60,7 @@ Global **Elementor Pro** und ein veröffentlichtes **Standard-Elementor-Template
 
 Die eigenen automatischen Öffnungs-Trigger des Elementor-Templates deaktivieren, damit allein der Manager öffnet. Das Template wird über `add_popup_to_location` geladen. Fehlt Elementor Pro, ein gültiges Template oder das benötigte Frontend-Modul, dient Standalone als Rückfall. Nach einem Template-Wechsel den Seiten-/Elementor-Cache leeren, damit das neue Template-Markup auf allen Seiten vorhanden ist.
 
-Die Popup-Shortcodes berücksichtigen nun den Aktivierungszustand und Zeitraum. Außerhalb aktiver Zeiträume geben sie keinen sichtbaren Inhalt aus. Für eine manuelle Einbindung kann der globale Modus weiterhin eingeschaltet bleiben; die Shortcodes ersetzen nicht den automatischen Popup-Auslöser.
+Die Popup-Shortcodes berücksichtigen nun den Aktivierungszustand und Zeitraum. Außerhalb aktiver Zeiträume geben sie keinen sichtbaren Inhalt aus. Die Inhalts-Shortcodes befüllen Templates; zum Öffnen per Klick dient die unten beschriebene Öffnungsart.
 
 ## Complianz: Cookie-Banner hat Vorrang
 
@@ -191,3 +191,26 @@ Pro Popup steht unter **Nach dem Schließen** zusätzlich **Für diese Tab-Sitzu
 `CHANGELOG.md` enthält die vollständige Historie, neueste Version zuerst, mit Überschriften `## X.Y.Z – YYYY-MM-DD` (Europe/Berlin). Jede Version verwendet nur die zutreffenden Kategorien **New**, **Fix**, **Change**, **Remove**; leere Kategorien entfallen.
 
 GitHub-Releases enthalten ausschließlich den jeweiligen Versionsabschnitt. `tools/release_notes.py` prüft und extrahiert diesen Abschnitt; fehlende oder doppelte Versionen führen zum Abbruch. Änderungen am Changelog auf main synchronisieren auch die Beschreibungen bestehender veröffentlichter Releases. Dabei wird nur der Beschreibungstext geändert, keine Tags, Pakete, Veröffentlichungsdaten oder Latest-Markierungen. Die vollständige Historie bleibt im Repository und in künftig gebauten Plugin-Paketen erhalten. Bereits veröffentlichte ZIP-Dateien werden nicht nachträglich verändert.
+
+
+### Popup per Button oder Link öffnen (ab 1.3.0)
+
+Im jeweiligen Popup unter **Popup öffnen** „Nur per Klick (Button / Link)“ wählen. Der Editor zeigt die konkrete Popup-ID und passende Einbindungswerte an. Beispiel für Popup 123:
+
+- Im Button-Linkfeld von Divi, Elementor oder WordPress: `#notice-popup-123`.
+- Alternativ als CSS-Klasse oder CSS-ID des Buttons/Links: `notice-popup-123` (ohne `#`).
+- Bei eigenem HTML: `<button type="button" data-notice-popup="123">Video ansehen</button>`.
+
+Die Zahl durch die tatsächliche Popup-ID ersetzen. Manuelle Popups erscheinen nicht automatisch. Die Seitenauswahl und gespeicherte Schließentscheidung werden bei einem bewussten Klick ignoriert; das Popup kann bei jedem Klick erneut geöffnet werden. Das Popup muss veröffentlicht, ohne Passwort, im gültigen Start-/Endzeitraum und global aktiviert sein. Complianz hat weiterhin Vorrang. Nicht verfügbare Popups werden mit einer kurzen Meldung quittiert. Bestehende Popups bleiben automatisch. Es ist weiterhin höchstens ein Popup gleichzeitig sichtbar.
+
+### Video im Popup-Inhalt (ab 1.3.0)
+
+WordPress-Video-Shortcodes mit direkten Videodateien werden unterstützt, beispielsweise:
+
+```text
+[video mp4="https://example.org/wp-content/uploads/film.mp4"][/video]
+```
+
+Das Video nutzt native Browser-Bedienelemente. Es startet erst durch die Wiedergabeaktion des Besuchers; Autoplay ist ausgeschaltet. Beim Schließen oder Wechseln des Popups wird das Video gestoppt. Regelmäßige Statusprüfungen ersetzen unveränderten Inhalt nicht. In Divi-/Elementor-Templates den Popup-Inhaltsplatzhalter verwenden, um den jeweiligen Beitragstext samt Video einzusetzen. YouTube-/Vimeo-Seitenlinks sind keine direkten Videodateien und werden durch diese Erweiterung nicht als externe Player eingebettet. Andere verschachtelte Shortcodes bleiben unverändert.
+
+Video-Test mit echtem WordPress-Core: `php tests/video.php /pfad/zu/wordpress`. Browser-Tests benötigen Node und Playwright; `node tests/trigger.cjs` prüft die Klick-Auslöser und den Video-Lebenszyklus mit allen drei Renderern.

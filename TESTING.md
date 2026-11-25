@@ -76,3 +76,11 @@ PHP-Prüfungen für Erkennen, Speichern und stabilen Sitzungsschlüssel. `node t
 ## Release-Notizen
 
 `python3 tests/release_notes.py` prüft die Isolation aller Versionsabschnitte, ungültige/fehlende/doppelte Versionen sowie die Beschränkung der GitHub-Synchronisierung auf das Body-Feld. Entwürfe werden übersprungen, unveränderte Beschreibungen nicht erneut geschrieben.
+
+
+## Version 1.3.0: Video und Klick-Auslöser
+
+- PHP: `tests/schedule.php` prüft zusätzlich die manuelle Öffnungsart, Ausschluss aus der automatischen Warteschlange und Veröffentlichung/Zeitgrenzen/Passwortschutz/globalen Status.
+- WordPress-Core: `php tests/video.php /pfad/zu/wordpress` prüft echte Video-Shortcode-Ausgabe und KSES-Bereinigung, mehrere Videos, stabile Ausgabe, native Bedienelemente und ausgeschaltetes Autoplay. Lokal mit WordPress 6.0 geprüft; derselbe Core-Test läuft beim Release.
+- Browser: `node tests/trigger.cjs` prüft Links, CSS-Klassen, IDs, Datenattribute, Tastatur, wiederholtes Öffnen, schnelle wechselnde Klicks, Complianz und Erhalt/Stoppen von Videoelementen für Standalone sowie Divi-/Elementor-Testadapter.
+- Die Browser-Adapter ersetzen keine Prüfung auf einer echten Divi-/Elementor-Website. Videowiedergabe mit der konkreten Mediendatei und deren Server-/Codec-Einstellungen dort zusätzlich prüfen.

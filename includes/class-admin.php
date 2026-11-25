@@ -185,6 +185,11 @@ final class ZZZNM_Admin {
             } else {
                 echo '<p>Bitte zuerst als Entwurf speichern, danach ist die Popup-Vorschau verfügbar.</p>';
             }
+            echo '<p><label for="zzznm-trigger"><strong>Popup öffnen</strong></label><br><select id="zzznm-trigger" name="zzznm_trigger">';
+            foreach (['auto' => 'Automatisch auf passenden Seiten', 'manual' => 'Nur per Klick (Button / Link)'] as $value => $label) {
+                echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->trigger_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
+            }
+            echo '</select></p><p>Für Klick-Popups als Linkziel <code>#notice-popup-' . (int) $post->ID . '</code> verwenden. Alternativ am Button/Link die CSS-Klasse oder ID <code>notice-popup-' . (int) $post->ID . '</code> setzen (ohne #). Auch <code>data-notice-popup="' . (int) $post->ID . '"</code> ist möglich. Die Seitenauswahl und Schließregel gelten dann nicht; Veröffentlichung, Zeitraum und Complianz-Sperre bleiben wirksam. Jeder bewusste Klick darf das Popup erneut öffnen.</p>';
             echo '<p><label for="zzznm-location"><strong>Auf welchen Seiten anzeigen?</strong></label><br><select id="zzznm-location" name="zzznm_location">';
             foreach ($this->manager->locations() as $value => $label) {
                 echo '<option value="' . esc_attr($value) . '" ' . selected($this->manager->location_mode($post->ID), $value, false) . '>' . esc_html($label) . '</option>';
@@ -282,6 +287,7 @@ final class ZZZNM_Admin {
         }
         if ($post->post_type === ZZZNM_Manager::POPUP) {
             if (isset($_POST['zzznm_priority'])) { update_post_meta($id, '_zzznm_priority', max(0, min(999, (int) $this->input('zzznm_priority')))); }
+            if (isset($_POST['zzznm_trigger'])) { update_post_meta($id, '_zzznm_trigger', $this->input('zzznm_trigger') === 'manual' ? 'manual' : 'auto'); }
             if (isset($_POST['zzznm_location'])) {
                 $mode = $this->input('zzznm_location');
                 update_post_meta($id, '_zzznm_location', isset($this->manager->locations()[$mode]) ? $mode : 'all');

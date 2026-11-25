@@ -5,6 +5,17 @@ New = neue Funktionen · Fix = Fehlerbehebungen · Change = Änderungen · Remov
 
 Die GitHub-Release-Beschreibungen enthalten jeweils nur die Änderungen ihrer Version. Die vollständige Historie bleibt hier erhalten.
 
+## 1.3.0 – 2026-11-25
+
+### New
+- Öffnungsart pro Popup: automatisch oder nur per Klick. Buttons und Links können ein Popup über `#notice-popup-ID`, die CSS-Klasse/ID `notice-popup-ID` oder `data-notice-popup="ID"` öffnen.
+- Manuelle Popups lassen sich unabhängig von Seitenauswahl und vorheriger Schließentscheidung erneut öffnen. Veröffentlichung, Zeitraum, globale Aktivierung und Complianz bleiben berücksichtigt.
+- Konkrete Einbindungshinweise im Popup-Editor und Kennzeichnung manueller Popups im Dashboard.
+
+### Fix
+- WordPress-Video-Shortcodes im Popup-Inhalt werden als native Videoplayer ausgegeben, einschließlich der benötigten Videoquellen.
+- Unveränderte Popup-Inhalte bleiben bei regelmäßigen Aktualisierungen erhalten, damit laufende Videos nicht zurückgesetzt werden. Beim Schließen oder Wechseln wird die Wiedergabe gestoppt.
+
 ## 1.2.2 – 2026-10-25
 
 ### New

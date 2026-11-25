@@ -116,8 +116,13 @@ final class ZZZNM_Frontend {
         $popups = $settings['enabled'] ? $this->manager->active(ZZZNM_Manager::POPUP, $now) : [];
         $context = isset($_POST['page_context']) && is_string($_POST['page_context'])
             ? json_decode(wp_unslash($_POST['page_context']), true) : [];
+        $requested = isset($_POST['popup_id']) && is_string($_POST['popup_id']) && ctype_digit($_POST['popup_id']) ? (int) $_POST['popup_id'] : 0;
+        $manual = null;
+        foreach ($popups as $post) {
+            if ($post->ID === $requested && $this->manager->trigger_mode($post->ID) === 'manual') { $manual = $this->manager->popup_data($post); break; }
+        }
         $popups = array_values(array_filter($popups, function ($post) use ($context) {
-            return $this->manager->matches_location($post->ID, $context);
+            return $this->manager->trigger_mode($post->ID) === 'auto' && $this->manager->matches_location($post->ID, $context);
         }));
         $tickers = [];
         foreach ($this->manager->active(ZZZNM_Manager::TICKER, $now) as $post) {
@@ -130,7 +135,7 @@ final class ZZZNM_Frontend {
                 if ($boundary > $now) { $next = min($next, $boundary); }
             }
         }
-        wp_send_json_success(['popups' => array_map([$this->manager, 'popup_data'], $popups),
+        wp_send_json_success(['manual' => $manual, 'popups' => array_map([$this->manager, 'popup_data'], $popups),
             'popup' => $popups ? $this->manager->popup_data($popups[0]) : null,
             'tickers' => $tickers, 'settings' => $settings, 'template' => $this->manager->template_id(),
             'divi_template' => $this->manager->divi_template_id(), 'now' => $now, 'next' => $next]);

@@ -34,6 +34,11 @@ jobs:
           for builder in none divi elementor both; do php tests/admin.php "$builder"; done
           node --check assets/js/frontend.js
           python3 tests/release_notes.py
+      - name: Test WordPress video shortcode
+        run: |
+          curl --fail --silent --show-error --location https://wordpress.org/wordpress-6.0.tar.gz --output /tmp/wordpress.tar.gz
+          tar -xzf /tmp/wordpress.tar.gz -C /tmp
+          php tests/video.php /tmp/wordpress
       - name: Build ZIP and metadata
         env:
           INPUT_VERSION: ${{ inputs.version }}

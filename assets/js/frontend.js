@@ -4,6 +4,7 @@
   const config = window.ZZZNM;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state, current = null, dialog = null, timer, showTimer, expiryTimer, refreshing = false;
+  let manualId = 0;
   let serverOffset = 0, refreshAgain = false, closingTemplate = 0, nextOpening = 0;
   const seen = new Set();
   const tickerInstances = new Map();
@@ -99,7 +100,7 @@
     if (part !== 'heading') {
       const body = element('div', 'zzznm-text praxis-popup-text-columns');
       body.style.setProperty('--zzznm-columns', post.columns);
-      body.innerHTML = post.html; // Sanitized with wp_kses_post by the server.
+      body.innerHTML = post.html; // Sanitized with WordPress KSES by the server.
       wrap.append(body);
     }
     if (part === 'notice') wrap.append(content(post, 'button'));
@@ -159,14 +160,22 @@
     });
   }
   function remember(post) {
+    if (current?.manual) { manualId = 0; return; }
     seen.add(post.key);
     if (!config.adminPreview && (post.dismiss || 'content') !== 'always') storage.set(post);
+  }
+  function stopMedia(root) {
+    root?.querySelectorAll('video, audio').forEach(media => {
+      try { media.pause(); media.currentTime = 0; } catch (_) { /* Media may not have loaded yet. */ }
+    });
   }
   function closeCurrent() {
     clearTimeout(showTimer);
     clearTimeout(expiryTimer);
     const old = current;
     current = null;
+    stopMedia(dialog);
+    if (old?.template) stopMedia(document.getElementById(`elementor-popup-modal-${old.template}`));
     if (dialog?.querySelector('.zzznm-divi-content')) {
       document.getElementById('zzznm-divi-template')?.append(dialog.querySelector('.zzznm-divi-content'));
     }
@@ -264,20 +273,27 @@
     const eligible = state.popups.filter(post => now() < post.until && !seen.has(post.key)
       && (config.adminPreview || (post.dismiss || 'content') === 'always' || !storage.has(post)));
     // Preserve an open popup while it remains eligible; priority applies to the next opening.
-    const post = eligible.find(post => post.key === current?.key) || eligible[0] || null;
+    let post;
+    const manual = manualId > 0;
+    if (manual) {
+      post = state.manual && Number(state.manual.id) === manualId && now() < state.manual.until ? state.manual : null;
+      if (!post) { manualId = 0; triggerMessage('Dieses Popup ist derzeit nicht verfügbar.'); }
+    } else post = eligible.find(post => post.key === current?.key) || eligible[0] || null;
     state.popup = post;
     fillSlots();
     updateComplianz();
     if (complianzHeld) return;
     if (!post) { closeCurrent(); return; }
-    if (current?.key === post.key) {
+    if (current?.key === post.key && Boolean(current.manual) === manual) {
+      const changed = JSON.stringify([current.post.heading, current.post.html, current.post.columns, current.post.button_text, current.post.button_url])
+        !== JSON.stringify([post.heading, post.html, post.columns, post.button_text, post.button_url]);
       current.post = post;
-      if (dialog && !dialog.classList.contains('zzznm-dialog-divi')) dialog.querySelector('.zzznm-dialog-content').replaceChildren(content(post));
+      if (changed && dialog && !dialog.classList.contains('zzznm-dialog-divi')) dialog.querySelector('.zzznm-dialog-content').replaceChildren(content(post));
       return;
     }
     closeCurrent();
-    current = { key: post.key, post, template: 0 };
-    showTimer = setTimeout(() => show(post, state.template), state.settings.delay);
+    current = { key: post.key, post, template: 0, manual };
+    showTimer = setTimeout(() => show(post, state.template), (manual ? 0 : state.settings.delay));
     const expire = () => {
       if (now() < post.until) {
         expiryTimer = setTimeout(expire, Math.min(2147483647, Math.max(1, (post.until - now()) * 1000)));
@@ -307,6 +323,7 @@
         remember(current.post);
         closingTemplate = current.template;
         nextOpening = Date.now() + 300;
+        stopMedia(document.getElementById(`elementor-popup-modal-${current.template}`));
         current.template = 0; // The visitor already closed it; do not trigger another hide event.
         closeCurrent();
         refresh();
@@ -449,15 +466,17 @@
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     let next = 30000;
+    const requestedId = manualId;
     try {
       const response = await fetch(config.endpoint, { method: 'POST', credentials: 'same-origin',
         cache: 'no-store', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: config.adminPreview
           ? new URLSearchParams({ action: 'zzznm_preview_state', zzznm_preview: config.previewId, zzznm_nonce: config.previewNonce }).toString()
-          : new URLSearchParams({ action: 'zzznm_state', page_context: JSON.stringify(config.pageContext || {}) }).toString(), signal: controller.signal });
+          : new URLSearchParams({ action: 'zzznm_state', popup_id: String(requestedId), page_context: JSON.stringify(config.pageContext || {}) }).toString(), signal: controller.signal });
       if (!response.ok) throw new Error('Unable to load notices');
       const payload = await response.json();
       if (!payload.success) throw new Error('Invalid notice response');
+      if (requestedId !== manualId) { refreshAgain = true; return; }
       const previewError = document.querySelector('[data-zzznm-preview-error]');
       if (previewError) previewError.textContent = '';
       state = payload.data;
@@ -467,6 +486,8 @@
       bindElementor(); syncPopup(); syncTickers();
       next = Math.max(1000, Math.min(60000, (state.next - state.now) * 1000));
     } catch (_) {
+      if (requestedId !== manualId) { refreshAgain = true; return; }
+      if (manualId) { manualId = 0; triggerMessage('Das Popup konnte nicht geladen werden. Bitte erneut versuchen.'); }
       const previewError = document.querySelector('[data-zzznm-preview-error]');
       if (previewError) previewError.textContent = ' Vorschau konnte nicht geladen werden. Bitte im Popup-Beitrag neu öffnen.';
       // Fail closed: stale notices must not remain visible after a network failure.
@@ -478,7 +499,40 @@
       refreshAgain = false;
     }
   }
+  let messageTimer;
+  function triggerMessage(message) {
+    let node = document.getElementById('zzznm-trigger-message');
+    if (!node) {
+      node = element('div', 'zzznm-trigger-message'); node.id = 'zzznm-trigger-message';
+      node.setAttribute('role', 'status'); document.body.append(node);
+    }
+    node.textContent = message; node.hidden = !message;
+    clearTimeout(messageTimer);
+    if (message) messageTimer = setTimeout(() => { node.hidden = true; }, 6000);
+  }
+  function triggerId(target) {
+    for (let node = target instanceof Element ? target : target?.parentElement; node; node = node.parentElement) {
+      const data = node.getAttribute('data-notice-popup');
+      if (data && /^[1-9]\d*$/.test(data)) return Number(data);
+      const href = node.getAttribute('href') || '';
+      const match = /^#notice-popup-([1-9]\d*)$/.exec(href)
+        || /^notice-popup-([1-9]\d*)$/.exec(node.id)
+        || [...node.classList].map(name => /^notice-popup-([1-9]\d*)$/.exec(name)).find(Boolean);
+      if (match) return Number(match[1]);
+    }
+    return 0;
+  }
   function start() {
+    document.addEventListener('click', event => {
+      if (config.adminPreview || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const id = triggerId(event.target);
+      if (!Number.isSafeInteger(id) || id <= 0) return;
+      event.preventDefault(); triggerMessage('');
+      if (manualId !== id) closeCurrent();
+      manualId = id;
+      // A fresh server check also handles an expired, unpublished or disabled popup.
+      refresh();
+    });
     if (config.adminPreview) document.querySelector('[data-zzznm-preview-reopen]')?.addEventListener('click', () => {
       seen.clear(); closeCurrent(); refresh();
     });
