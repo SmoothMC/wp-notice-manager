@@ -1,4 +1,4 @@
-# WP Notice Manager · 1.3.0
+# WP Notice Manager · 1.3.1
 
 Weiterentwicklung von **Praxis Popup Hinweis 0.9.6**, mit getrennten Post Types für Popups und Ticker. Der ursprüngliche Plugin-Ordner bleibt unverändert.
 
@@ -30,7 +30,7 @@ Die Metadaten kommen aus [update.json im neuesten Release](https://github.com/Sm
 3. Der Workflow prüft PHP und Update-Logik, baut das ZIP mit stabilem Ordnernamen und erzeugt passende Metadaten. Die Release-Beschreibung wird ausschließlich aus dem passenden Versionsabschnitt des Changelogs erzeugt.
 4. ZIP und `update.json` werden zuerst in einen Entwurf geladen; erst danach wird das Release veröffentlicht. Vorhandene Releases werden nicht überschrieben.
 
-Lokal bauen: `python3 tools/build_release.py 1.3.0`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
+Lokal bauen: `python3 tools/build_release.py 1.3.1`. Die Ergebnisse liegen in `build/`. Abweichungen zwischen Version und Plugin-Header brechen den Build ab. Die automatisch generierte JSON-Datei liegt als Release-Anhang bereit; kein separates CDN oder SFTP-Zugang ist erforderlich.
 
 ## Popups planen
 

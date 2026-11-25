@@ -5,6 +5,12 @@ New = neue Funktionen · Fix = Fehlerbehebungen · Change = Änderungen · Remov
 
 Die GitHub-Release-Beschreibungen enthalten jeweils nur die Änderungen ihrer Version. Die vollständige Historie bleibt hier erhalten.
 
+## 1.3.1 – 2026-11-25
+
+### Fix
+- Video-Shortcodes in Popups und deren Vorschau verwenden den nativen WordPress-Player unabhängig von Video-Renderern des Themes oder anderer Plugins. Dadurch blockieren fremde Player-Ausgaben mit leerem `src` nicht mehr die gültige MP4-Quelle.
+- Video-Filter werden unmittelbar nach der Popup-Ausgabe wiederhergestellt; die Videodarstellung außerhalb des Popups bleibt unverändert.
+
 ## 1.3.0 – 2026-11-25
 
 ### New

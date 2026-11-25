@@ -130,6 +130,15 @@ final class ZZZNM_Manager {
         if ($post->post_type !== self::POPUP || strpos($html, '[video') === false) { return $html; }
         // Use WordPress's video shortcode, with native controls for AJAX-inserted markup.
         // Deliberately do not execute arbitrary plugin shortcodes or recursive popup slots.
+        // Theme player overrides often require a separate JS initialization and can
+        // emit an empty video src, which takes precedence over valid child sources.
+        // Suspend only video presentation filters while rendering this popup body.
+        global $wp_filter;
+        $saved_filters = [];
+        foreach (['wp_video_shortcode_override', 'wp_video_shortcode', 'wp_video_shortcode_class', 'wp_video_shortcode_library'] as $tag) {
+            $saved_filters[$tag] = $wp_filter[$tag] ?? null;
+            unset($wp_filter[$tag]);
+        }
         $native = static function () { return 'native'; };
         add_filter('wp_video_shortcode_library', $native, PHP_INT_MAX);
         $index = 0;
@@ -151,7 +160,10 @@ final class ZZZNM_Manager {
                 return $m[1] . $output . $m[6];
             }, shortcode_unautop($html));
         } finally {
-            remove_filter('wp_video_shortcode_library', $native, PHP_INT_MAX);
+            foreach ($saved_filters as $tag => $original) {
+                unset($wp_filter[$tag]);
+                if ($original !== null) { $wp_filter[$tag] = $original; }
+            }
         }
         $allowed = wp_kses_allowed_html('post');
         $allowed['source'] = ['src' => true, 'type' => true, 'media' => true];

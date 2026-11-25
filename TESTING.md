@@ -84,3 +84,8 @@ PHP-Prüfungen für Erkennen, Speichern und stabilen Sitzungsschlüssel. `node t
 - WordPress-Core: `php tests/video.php /pfad/zu/wordpress` prüft echte Video-Shortcode-Ausgabe und KSES-Bereinigung, mehrere Videos, stabile Ausgabe, native Bedienelemente und ausgeschaltetes Autoplay. Lokal mit WordPress 6.0 geprüft; derselbe Core-Test läuft beim Release.
 - Browser: `node tests/trigger.cjs` prüft Links, CSS-Klassen, IDs, Datenattribute, Tastatur, wiederholtes Öffnen, schnelle wechselnde Klicks, Complianz und Erhalt/Stoppen von Videoelementen für Standalone sowie Divi-/Elementor-Testadapter.
 - Die Browser-Adapter ersetzen keine Prüfung auf einer echten Divi-/Elementor-Website. Videowiedergabe mit der konkreten Mediendatei und deren Server-/Codec-Einstellungen dort zusätzlich prüfen.
+
+## Version 1.3.1: Theme-Video-Renderer
+
+- Regressionstest mit echtem WordPress-Core: fremde Video-Ausgabe mit leerem `src` wird im Popup umgangen; alle vier Video-Filter werden danach unverändert wiederhergestellt.
+- Die öffentlich ausgelieferte Ausgabe des betroffenen Popups wurde im lokalen Browser nachgestellt: `NotSupportedError` mit leerem `src`; nach Entfernen des Attributs läuft dieselbe MP4-Datei (34,42 Sekunden). Die Website selbst wurde nicht verändert.

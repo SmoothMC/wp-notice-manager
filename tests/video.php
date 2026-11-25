@@ -37,6 +37,21 @@ check(substr_count($html, '<video ') === 2 && strpos($html, 'zzznm-video-42-2') 
 check($html === $manager->body($post), 'Multiple video output remains stable');
 $post->post_content = '[video mp4="javascript:alert(1).mp4"][/video]';
 check(strpos($manager->body($post), 'src="javascript:') === false, 'Unsafe media protocol removed');
+// Reproduce a theme player override with an empty top-level source.
+$post->post_content = '[video mp4="https://example.org/movie.mp4"][/video]';
+$theme = static function () { return '<video src="" class="video-js-el"><source src="https://example.org/movie.mp4" type="video/mp4"></video>'; };
+$library = static function () { return 'theme-player'; };
+add_filter('wp_video_shortcode_override', $theme);
+add_filter('wp_video_shortcode', $theme);
+add_filter('wp_video_shortcode_class', $library);
+add_filter('wp_video_shortcode_library', $library);
+$original_hooks = [];
+foreach (['wp_video_shortcode_override', 'wp_video_shortcode', 'wp_video_shortcode_class', 'wp_video_shortcode_library'] as $tag) { $original_hooks[$tag] = $wp_filter[$tag]; }
+$html = $manager->body($post);
+check(strpos($html, 'src=""') === false && strpos($html, 'video-js-el') === false, 'Theme player cannot replace popup video');
+check(strpos($html, '<source ') !== false && strpos($html, 'class="zzznm-video"') !== false, 'Native source and player preserved');
+foreach ($original_hooks as $tag => $hook) { check($wp_filter[$tag] === $hook, 'Theme filter restored: ' . $tag); }
+check(wp_video_shortcode(['mp4'=>'https://example.org/movie.mp4']) === $theme(), 'Theme behavior outside popup unchanged');
 $post->post_type = ZZZNM_Manager::TICKER;
 check(strpos($manager->body($post), '<video ') === false, 'Ticker behavior unchanged');
 echo "PASS: {$checks} real WordPress video checks.\n";
